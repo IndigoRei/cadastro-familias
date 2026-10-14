@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro de Aprendizes | Índigo Rei</title>
+<meta name="description" content="Ficha de cadastro das famílias do Instituto Índigo Rei.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#062D56">
+<link rel="icon" href="simbolo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#062D56; --gold:#C89C36; --gold-2:#B0862A; --gold-soft:#F5EBD3;
+    --rose:#C38696; --teal:#448493;
+    --bg:#F4F1EA; --card:#FFFFFF; --ink:#18212E; --muted:#5E6876; --line:#E2DCCF; --field:#FBFAF6;
+    --erro:#B3261E; --erro-soft:#FCEDEC; --ok:#2E7D5B; --raio:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  [hidden]{display:none !important}
+
+  .progresso{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(6,45,86,.15);z-index:20}
+  .progresso-barra{height:100%;width:0;background:var(--gold);transition:width .35s ease}
+  .faixa{position:absolute;top:0;left:0;right:0;height:260px;background-color:var(--navy);
+    background-image:radial-gradient(circle at 88% 18%,rgba(200,156,54,.38),transparent 42%),
+                     radial-gradient(circle at 8% 100%,rgba(68,132,147,.40),transparent 45%);z-index:0}
+  .coluna{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:44px 16px 56px}
+  .cartao{background:var(--card);border:1px solid var(--line);border-radius:var(--raio);padding:22px 24px;margin-bottom:12px;
+    box-shadow:0 1px 2px rgba(6,45,86,.04)}
+
+  /* Capa */
+  .cartao.capa{padding:0;overflow:hidden;border:0;box-shadow:0 14px 34px rgba(6,45,86,.20);margin-bottom:22px}
+  .capa-topo{height:8px;background:linear-gradient(90deg,var(--gold),#E4C67C 50%,var(--gold))}
+  .capa-corpo{padding:28px 28px 24px}
+  .logo{display:block;max-width:300px;max-height:92px;width:auto;height:auto;margin:0 0 20px}
+  .marca{font-weight:700;font-size:22px;color:var(--navy);margin:0 0 18px;letter-spacing:.02em}
+  .marca span{color:var(--gold)}
+  h1{font-size:28px;line-height:1.2;margin:0 0 12px;color:var(--navy);font-weight:600;letter-spacing:-.01em}
+  .capa p{margin:0 0 10px;color:#38414E}
+  .servicos{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px;padding:0;list-style:none}
+  .servicos li{font-size:12px;color:var(--navy);background:#EEF2F7;border-radius:999px;padding:4px 10px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .selo{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--navy);
+    background:var(--gold-soft);border-radius:999px;padding:5px 12px}
+  .selo svg{width:14px;height:14px;flex:none}
+  .capa .legenda-obrig{font-size:13px;color:var(--erro);margin:16px 0 0}
+
+  /* Seções */
+  .secao{margin-top:26px}
+  .secao-cab{display:flex;gap:14px;align-items:flex-start;border-left:5px solid var(--gold);padding:18px 22px}
+  .secao-num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;font-weight:600;
+    display:grid;place-items:center;font-size:15px}
+  .secao-cab h2{margin:2px 0 2px;font-size:19px;color:var(--navy);font-weight:600}
+  .secao-cab p{margin:0;font-size:13.5px;color:var(--muted)}
+
+  /* Blocos e campos */
+  .bloco{position:relative}
+  .bloco-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-2px 0 16px}
+  .bloco-cab h3{margin:0;font-size:17px;color:var(--navy);font-weight:600;display:flex;align-items:center;gap:10px}
+  .etiqueta{font-size:12px;font-weight:600;color:var(--navy);background:var(--gold-soft);border-radius:999px;padding:3px 10px}
+  .subtitulo{display:flex;align-items:center;gap:10px;margin:22px 0 4px;padding-top:18px;border-top:1px dashed var(--line)}
+  .subtitulo h4{margin:0;font-size:15px;color:var(--navy);font-weight:600}
+  .subtitulo svg{width:18px;height:18px;color:var(--teal);flex:none}
+  .nota{font-size:12.5px;color:var(--muted);margin:0 0 14px;display:flex;gap:6px;align-items:flex-start}
+  .nota svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--teal)}
+  .grade{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+  .grade .largo{grid-column:1/-1}
+  .grade-cep{display:grid;grid-template-columns:150px 1fr 110px;gap:14px 16px}
+  .grade-cep .largo{grid-column:1/-1}
+  .grade-cidade{display:grid;grid-template-columns:1fr 1fr 110px;gap:14px 16px}
+  .campo{position:relative;min-width:0}
+  .campo + .campo{margin-top:0}
+  .pilha > .campo + .campo{margin-top:16px}
+  .rotulo{display:block;font-weight:500;font-size:14.5px;color:var(--ink);margin:0 0 6px}
+  .obrig{color:var(--erro);margin-left:3px}
+  .ajuda{font-size:12.5px;color:var(--muted);margin:-2px 0 8px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);
+    background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;outline:none;
+    transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;appearance:none}
+  textarea{resize:vertical;min-height:92px;line-height:1.5}
+  input::placeholder,textarea::placeholder{color:#A39C8E}
+  input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 4px var(--gold-soft);background:#fff}
+  select{cursor:pointer;padding-right:40px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23062D56' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 15px center}
+  .data3{display:grid;grid-template-columns:.8fr 1.4fr 1fr;gap:8px}
+  .campo.tem-erro input,.campo.tem-erro select,.campo.tem-erro textarea{border-color:#E3A29C;background:#FFF9F8}
+  .erro-msg{display:none;color:var(--erro);font-size:12.5px;margin-top:6px;align-items:center;gap:6px}
+  .erro-msg svg{width:15px;height:15px;flex:none}
+  .campo.tem-erro > .erro-msg{display:flex}
+  .carregando-cep{position:absolute;right:12px;top:38px;font-size:12px;color:var(--muted)}
+
+  /* Opções em pílula */
+  .opcoes{display:flex;flex-wrap:wrap;gap:8px}
+  .op{position:relative;cursor:pointer}
+  .op input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+  .op span{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1.5px solid var(--line);border-radius:999px;
+    background:var(--field);font-size:14px;line-height:1.3;transition:background .15s,border-color .15s,color .15s;user-select:none}
+  .op span::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid #B9B2A3;flex:none;transition:all .15s}
+  .op:hover span{border-color:#C7BEAA}
+  .op input:checked + span{background:var(--navy);border-color:var(--navy);color:#fff}
+  .op input:checked + span::before{border-color:var(--gold);background:var(--gold);box-shadow:inset 0 0 0 3px var(--navy)}
+  .op input:focus-visible + span{box-shadow:0 0 0 4px var(--gold-soft)}
+  .campo.tem-erro .op span{border-color:#E3A29C}
+  .revela{margin-top:12px;padding-left:14px;border-left:3px solid var(--gold-soft)}
+
+  /* Anexos */
+  .anexos-zona{display:flex;gap:14px;align-items:center;border:1.5px dashed #CFC6B3;border-radius:14px;padding:14px 16px;
+    background:var(--field);cursor:pointer;transition:border-color .15s,background .15s}
+  .anexos-zona:hover,.anexos-zona.arrastando{border-color:var(--navy);background:#fff}
+  .anexos-zona svg{width:30px;height:30px;color:var(--teal);flex:none}
+  .anexos-zona strong{display:block;color:var(--navy);font-weight:600;font-size:14.5px}
+  .anexos-zona small{display:block;color:var(--muted);font-size:12.5px}
+  .anexos-input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+  .anexos-lista{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}
+  .anexos-lista li{display:flex;align-items:center;gap:10px;font-size:13.5px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px}
+  .anexos-lista .nome-arq{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .anexos-lista .tam{color:var(--muted);font-size:12px;flex:none}
+  .anexos-lista button{flex:none;border:0;background:none;color:var(--erro);font:500 12.5px 'Poppins',sans-serif;cursor:pointer;padding:2px 4px}
+
+  /* Botões */
+  .botao-sec{display:inline-flex;align-items:center;gap:8px;font:500 14px 'Poppins',sans-serif;color:var(--navy);background:#fff;
+    border:1.5px solid var(--navy);border-radius:999px;padding:8px 16px;cursor:pointer}
+  .botao-sec svg{width:16px;height:16px}
+  .botao-remover{border:0;background:none;color:var(--erro);font:500 13px 'Poppins',sans-serif;cursor:pointer;padding:4px 6px;
+    display:inline-flex;align-items:center;gap:6px}
+  .botao-remover svg{width:15px;height:15px}
+  .adicionar{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;border:1.5px dashed var(--navy);
+    border-radius:var(--raio);background:rgba(255,255,255,.6);color:var(--navy);font:600 15px 'Poppins',sans-serif;cursor:pointer;
+    transition:background .15s}
+  .adicionar:hover{background:#fff}
+  .adicionar svg{width:20px;height:20px}
+
+  /* Interruptor */
+  .interruptor{display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
+  .interruptor input{position:absolute;opacity:0;width:1px;height:1px}
+  .trilho{width:46px;height:26px;border-radius:999px;background:#D7D0C2;position:relative;flex:none;transition:background .2s}
+  .trilho::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+  .interruptor input:checked + .trilho{background:var(--navy)}
+  .interruptor input:checked + .trilho::after{transform:translateX(20px);background:var(--gold)}
+  .interruptor input:focus-visible + .trilho{box-shadow:0 0 0 4px var(--gold-soft)}
+  .interruptor strong{display:block;font-weight:500;font-size:15px}
+  .interruptor small{display:block;color:var(--muted);font-size:12.5px}
+
+  /* Autorizações */
+  .aceite{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:1.5px solid var(--line);border-radius:12px;
+    background:var(--field);cursor:pointer;transition:all .15s;position:relative}
+  .aceite + .aceite{margin-top:10px}
+  .aceite input{position:absolute;opacity:0;width:1px;height:1px}
+  .aceite .marca-box{width:22px;height:22px;border-radius:6px;border:2px solid #B9B2A3;flex:none;margin-top:2px;transition:all .15s;
+    background-position:center;background-repeat:no-repeat;background-size:14px}
+  .aceite input:checked ~ .marca-box{border-color:var(--navy);background-color:var(--navy);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3.5 3.5L11 1.5' fill='none' stroke='%23C89C36' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  .aceite input:focus-visible ~ .marca-box{box-shadow:0 0 0 4px var(--gold-soft)}
+  .aceite .texto{font-size:14px;color:#2D3644}
+  .aceite .texto b{color:var(--navy);font-weight:600}
+  .aceite:has(input:checked){border-color:#C9D3E0;background:#fff}
+  .campo.tem-erro .aceite:not(:has(input:checked)){border-color:#E3A29C}
+
+  /* Envio */
+  .envio{text-align:center}
+  .alerta{display:none;text-align:left;background:var(--erro-soft);color:var(--erro);border-radius:12px;padding:12px 14px;
+    font-size:14px;margin-bottom:14px}
+  .alerta.visivel{display:block}
+  .enviar{width:100%;max-width:360px;padding:16px 20px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);
+    font:600 16px 'Poppins',sans-serif;cursor:pointer;box-shadow:0 8px 20px rgba(200,156,54,.35);transition:transform .1s,background .15s;
+    display:inline-flex;align-items:center;justify-content:center;gap:10px}
+  .enviar:hover{background:#D4A940}
+  .enviar:active{transform:translateY(1px)}
+  .enviar:disabled{opacity:.75;cursor:wait}
+  .giro{width:18px;height:18px;border:2.5px solid rgba(6,45,86,.25);border-top-color:var(--navy);border-radius:50%;
+    animation:gira .8s linear infinite;display:none}
+  .enviando .giro{display:inline-block}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  .envio small{display:block;color:var(--muted);font-size:12.5px;margin-top:12px}
+  .sucesso{display:none;text-align:center;padding:40px 28px}
+  .sucesso.visivel{display:block}
+  .sucesso .icone{width:72px;height:72px;border-radius:50%;background:var(--gold-soft);display:grid;place-items:center;margin:0 auto 18px}
+  .sucesso .icone svg{width:36px;height:36px;color:var(--gold-2)}
+  .sucesso h2{color:var(--navy);font-size:24px;margin:0 0 10px;font-weight:600}
+  .sucesso p{color:#38414E;margin:0 auto 10px;max-width:480px}
+  .rodape{text-align:center;color:var(--muted);font-size:12.5px;margin-top:28px}
+  .rodape b{color:var(--navy);font-weight:600}
+  .pote{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+  @media (max-width:600px){
+    .coluna{padding:28px 12px 44px}
+    .capa-corpo{padding:22px 20px 20px}
+    h1{font-size:24px}
+    .cartao{padding:18px 16px}
+    .secao-cab{padding:16px 16px}
+    .grade,.grade-cep,.grade-cidade{grid-template-columns:1fr}
+    .grade-cep{grid-template-columns:1fr 1fr}
+    .grade-cep .cep-campo{grid-column:1/-1}
+    .grade-cidade{grid-template-columns:1fr 96px}
+    .grade-cidade .bairro-campo{grid-column:1/-1}
+  }
+</style>
+</head>
+<body>
+<div class="progresso" aria-hidden="true"><div class="progresso-barra" id="barra"></div></div>
+<div class="faixa" aria-hidden="true"></div>
+
+<main class="coluna">
+  <header class="cartao capa">
+    <div class="capa-topo"></div>
+    <div class="capa-corpo">
+      <img class="logo" src="logo.png" alt="Índigo Rei" id="logo">
+      <div class="marca" id="marca" hidden>Índigo <span>Rei</span></div>
+      <h1>Cadastro de Aprendizes</h1>
+      <p>Seja bem-vinda, família! O Instituto Índigo Rei tem como missão desenvolver o potencial e a liderança de crianças e jovens, com um acompanhamento pensado para cada um.</p>
+      <p>Este cadastro nos ajuda a organizar os atendimentos, planejar o trabalho pedagógico e cuidar das necessidades de cada aprendiz. Se vocês têm mais de um filho conosco, cadastrem todos de uma vez.</p>
+      <ul class="servicos" aria-label="Nossos acompanhamentos">
+        <li>Orientação escolar e PEI</li><li>Orientação parental</li><li>Mentoria de estudos</li><li>Programa educacional personalizado</li>
+        <li>Projetos de vida</li><li>Contraturno</li><li>Altas habilidades e 2e</li><li>Projetos socioemocionais e vocacionais</li>
+        <li>Mapa de Aprendizagem</li><li>Avaliação psicopedagógica</li><li>Avaliação neuropsicológica</li>
+      </ul>
+      <div class="meta">
+        <span class="selo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Cerca de 10 minutos</span>
+        <span class="selo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Se houver, tenha os laudos à mão</span>
+        <span class="selo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Dados protegidos pela LGPD</span>
+      </div>
+      <p class="legenda-obrig">* Indica pergunta obrigatória</p>
+    </div>
+  </header>
+
+  <form id="form" novalidate autocomplete="on">
+    <div class="pote" aria-hidden="true"><label>Não preencha <input type="text" name="site" id="site" tabindex="-1" autocomplete="off"></label></div>
+
+    <!-- 1. Aprendizes -->
+    <section class="secao">
+      <div class="cartao secao-cab">
+        <div class="secao-num">1</div>
+        <div><h2>Aprendizes</h2><p>Os dados de cada criança ou jovem que será acompanhado.</p></div>
+      </div>
+      <div id="aprendizes"></div>
+      <button type="button" class="adicionar" id="adicionar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        <span>Adicionar outro(a) aprendiz</span>
+      </button>
+    </section>
+
+    <!-- 2. Responsável -->
+    <section class="secao">
+      <div class="cartao secao-cab">
+        <div class="secao-num">2</div>
+        <div><h2>Responsável</h2><p>Quem acompanha o aprendiz e fala com a nossa equipe.</p></div>
+      </div>
+      <div class="cartao">
+        <div class="grade">
+          <div class="campo largo" data-campo="respNome">
+            <label class="rotulo" for="respNome">Nome completo<span class="obrig">*</span></label>
+            <input type="text" id="respNome" name="respNome" autocomplete="name" maxlength="150">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo largo" data-campo="respParentesco">
+            <span class="rotulo">Parentesco com o(s) aprendiz(es)<span class="obrig">*</span></span>
+            <div class="opcoes">
+              <label class="op"><input type="radio" name="respParentesco" value="Mãe"><span>Mãe</span></label>
+              <label class="op"><input type="radio" name="respParentesco" value="Pai"><span>Pai</span></label>
+              <label class="op"><input type="radio" name="respParentesco" value="Avó ou avô"><span>Avó ou avô</span></label>
+              <label class="op"><input type="radio" name="respParentesco" value="Outro"><span>Outro</span></label>
+            </div>
+            <div class="revela" data-revela="respParentesco=Outro" hidden>
+              <input type="text" name="respParentescoOutro" id="respParentescoOutro" placeholder="Qual?" maxlength="50" aria-label="Qual parentesco">
+            </div>
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="respCpf">
+            <label class="rotulo" for="respCpf">CPF<span class="obrig">*</span></label>
+            <input type="text" id="respCpf" name="respCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" data-mascara="cpf">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="respRg">
+            <label class="rotulo" for="respRg">RG e órgão emissor<span class="obrig">*</span></label>
+            <input type="text" id="respRg" name="respRg" placeholder="Ex.: 1.234.567 SSP/DF" maxlength="40">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="respProfissao">
+            <label class="rotulo" for="respProfissao">Profissão</label>
+            <input type="text" id="respProfissao" name="respProfissao" autocomplete="organization-title" maxlength="80">
+          </div>
+          <div class="campo" data-campo="respEstadoCivil">
+            <label class="rotulo" for="respEstadoCivil">Estado civil<span class="obrig">*</span></label>
+            <select id="respEstadoCivil" name="respEstadoCivil">
+              <option value="">Selecione</option>
+              <option>Solteiro(a)</option><option>Casado(a)</option><option>União estável</option>
+              <option>Divorciado(a)</option><option>Viúvo(a)</option><option>Outro</option>
+            </select>
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="respTelefone">
+            <label class="rotulo" for="respTelefone">WhatsApp<span class="obrig">*</span></label>
+            <input type="tel" id="respTelefone" name="respTelefone" inputmode="tel" autocomplete="tel" placeholder="(61) 9 0000-0000" maxlength="20" data-mascara="tel">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="respEmail">
+            <label class="rotulo" for="respEmail">E-mail<span class="obrig">*</span></label>
+            <input type="email" id="respEmail" name="respEmail" inputmode="email" autocomplete="email" placeholder="seuemail@exemplo.com" maxlength="150">
+            <div class="erro-msg"></div>
+          </div>
+        </div>
+
+        <div class="subtitulo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          <h4>Endereço da família</h4>
+        </div>
+        <p class="nota">Digite o CEP que preenchemos o resto para você.</p>
+        <div class="grade-cep">
+          <div class="campo cep-campo" data-campo="cep">
+            <label class="rotulo" for="cep">CEP<span class="obrig">*</span></label>
+            <input type="text" id="cep" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" data-mascara="cep">
+            <span class="carregando-cep" id="cepStatus" hidden>buscando...</span>
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="logradouro">
+            <label class="rotulo" for="logradouro">Endereço<span class="obrig">*</span></label>
+            <input type="text" id="logradouro" name="logradouro" autocomplete="address-line1" placeholder="Rua, quadra, conjunto" maxlength="150">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="numero">
+            <label class="rotulo" for="numero">Número<span class="obrig">*</span></label>
+            <input type="text" id="numero" name="numero" maxlength="20" placeholder="Ou S/N">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo largo" data-campo="complemento">
+            <label class="rotulo" for="complemento">Complemento</label>
+            <input type="text" id="complemento" name="complemento" autocomplete="address-line2" placeholder="Apartamento, bloco, casa" maxlength="80">
+          </div>
+        </div>
+        <div class="grade-cidade" style="margin-top:14px">
+          <div class="campo bairro-campo" data-campo="bairro">
+            <label class="rotulo" for="bairro">Bairro<span class="obrig">*</span></label>
+            <input type="text" id="bairro" name="bairro" maxlength="80">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="cidade">
+            <label class="rotulo" for="cidade">Cidade<span class="obrig">*</span></label>
+            <input type="text" id="cidade" name="cidade" autocomplete="address-level2" maxlength="80">
+            <div class="erro-msg"></div>
+          </div>
+          <div class="campo" data-campo="uf">
+            <label class="rotulo" for="uf">UF<span class="obrig">*</span></label>
+            <select id="uf" name="uf" autocomplete="address-level1"><option value="">UF</option></select>
+            <div class="erro-msg"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Segundo contato -->
+    <section class="secao">
+      <div class="cartao secao-cab">
+        <div class="secao-num">3</div>
+        <div><h2>Segundo contato</h2><p>Outra pessoa da família com quem podemos falar, se precisar.</p></div>
+      </div>
+      <div class="cartao">
+        <label class="interruptor">
+          <input type="checkbox" id="temSegundo" name="temSegundo">
+          <span class="trilho"></span>
+          <span><strong>Quero informar um segundo contato</strong><small>Por exemplo, o pai ou a mãe que não preencheu este cadastro.</small></span>
+        </label>
+        <div id="segundoBloco" hidden style="margin-top:18px">
+          <div class="grade">
+            <div class="campo largo" data-campo="c2Nome">
+              <label class="rotulo" for="c2Nome">Nome completo<span class="obrig">*</span></label>
+              <input type="text" id="c2Nome" name="c2Nome" maxlength="150">
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo largo" data-campo="c2Parentesco">
+              <span class="rotulo">Parentesco com o(s) aprendiz(es)<span class="obrig">*</span></span>
+              <div class="opcoes">
+                <label class="op"><input type="radio" name="c2Parentesco" value="Mãe"><span>Mãe</span></label>
+                <label class="op"><input type="radio" name="c2Parentesco" value="Pai"><span>Pai</span></label>
+                <label class="op"><input type="radio" name="c2Parentesco" value="Avó ou avô"><span>Avó ou avô</span></label>
+                <label class="op"><input type="radio" name="c2Parentesco" value="Outro"><span>Outro</span></label>
+              </div>
+              <div class="revela" data-revela="c2Parentesco=Outro" hidden>
+                <input type="text" name="c2ParentescoOutro" id="c2ParentescoOutro" placeholder="Qual?" maxlength="50" aria-label="Qual parentesco">
+              </div>
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo" data-campo="c2Telefone">
+              <label class="rotulo" for="c2Telefone">WhatsApp<span class="obrig">*</span></label>
+              <input type="tel" id="c2Telefone" name="c2Telefone" inputmode="tel" placeholder="(61) 9 0000-0000" maxlength="20" data-mascara="tel">
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo" data-campo="c2Email">
+              <label class="rotulo" for="c2Email">E-mail</label>
+              <input type="email" id="c2Email" name="c2Email" inputmode="email" maxlength="150">
+              <div class="erro-msg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Responsável financeiro -->
+    <section class="secao">
+      <div class="cartao secao-cab">
+        <div class="secao-num">4</div>
+        <div><h2>Responsável financeiro</h2><p>A pessoa que recebe as mensagens de mensalidade.</p></div>
+      </div>
+      <div class="cartao">
+        <div class="campo" data-campo="finQuem">
+          <span class="rotulo">Quem cuida dos pagamentos?<span class="obrig">*</span></span>
+          <div class="opcoes">
+            <label class="op"><input type="radio" name="finQuem" value="Responsável principal"><span>O responsável acima</span></label>
+            <label class="op" id="opFinSegundo" hidden><input type="radio" name="finQuem" value="Segundo contato"><span>O segundo contato</span></label>
+            <label class="op"><input type="radio" name="finQuem" value="Outra pessoa"><span>Outra pessoa</span></label>
+          </div>
+          <div class="erro-msg"></div>
+        </div>
+        <div id="finSegundoBloco" hidden style="margin-top:16px">
+          <div class="grade">
+            <div class="campo" data-campo="finCpfSegundo">
+              <label class="rotulo" for="finCpfSegundo">CPF do segundo contato<span class="obrig">*</span></label>
+              <input type="text" id="finCpfSegundo" name="finCpfSegundo" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" data-mascara="cpf">
+              <div class="erro-msg"></div>
+            </div>
+          </div>
+        </div>
+        <div id="finOutroBloco" hidden style="margin-top:16px">
+          <div class="grade">
+            <div class="campo largo" data-campo="finNome">
+              <label class="rotulo" for="finNome">Nome completo<span class="obrig">*</span></label>
+              <input type="text" id="finNome" name="finNome" maxlength="150">
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo" data-campo="finCpf">
+              <label class="rotulo" for="finCpf">CPF<span class="obrig">*</span></label>
+              <input type="text" id="finCpf" name="finCpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" data-mascara="cpf">
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo" data-campo="finTelefone">
+              <label class="rotulo" for="finTelefone">WhatsApp<span class="obrig">*</span></label>
+              <input type="tel" id="finTelefone" name="finTelefone" inputmode="tel" placeholder="(61) 9 0000-0000" maxlength="20" data-mascara="tel">
+              <div class="erro-msg"></div>
+            </div>
+            <div class="campo largo" data-campo="finEmail">
+              <label class="rotulo" for="finEmail">E-mail<span class="obrig">*</span></label>
+              <input type="email" id="finEmail" name="finEmail" inputmode="email" maxlength="150">
+              <div class="erro-msg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Autorizações -->
+    <section class="secao">
+      <div class="cartao secao-cab">
+        <div class="secao-num">5</div>
+        <div><h2>Autorizações</h2><p>Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p></div>
+      </div>
+      <div class="cartao">
+        <div class="campo" data-campo="autorizaImagem">
+          <span class="rotulo">Vocês autorizam o uso de fotos e vídeos do(s) aprendiz(es) em atividades do Instituto, nas nossas redes sociais e em materiais institucionais?<span class="obrig">*</span></span>
+          <p class="ajuda">A autorização pode ser revogada a qualquer momento, valendo para os usos seguintes.</p>
+          <div class="opcoes">
+            <label class="op"><input type="radio" name="autorizaImagem" value="Sim, autorizo"><span>Sim, autorizo</span></label>
+            <label class="op"><input type="radio" name="autorizaImagem" value="Não autorizo"><span>Não autorizo</span></label>
+          </div>
+          <div class="erro-msg"></div>
+        </div>
+        <div class="campo" data-campo="consentimentos" style="margin-top:20px">
+          <label class="aceite">
+            <input type="checkbox" id="consentimento" name="consentimento">
+            <span class="marca-box"></span>
+            <span class="texto"><b>Declaro ser mãe, pai ou responsável legal</b> e autorizo o Instituto Índigo Rei a usar os dados deste cadastro, inclusive as informações de saúde e os documentos anexados, para planejar e realizar os atendimentos, falar com a família e cumprir as obrigações do contrato. As informações de saúde e os laudos ficam numa área restrita, com acesso apenas da coordenação e dos profissionais que acompanham o aprendiz. Posso pedir acesso, correção ou exclusão dos dados pelo e-mail institutoindigorei@gmail.com.<span class="obrig">*</span></span>
+          </label>
+          <label class="aceite">
+            <input type="checkbox" id="declaracao" name="declaracao">
+            <span class="marca-box"></span>
+            <span class="texto"><b>Declaro que as informações são verdadeiras</b> e que vou avisar a equipe se algo mudar.<span class="obrig">*</span></span>
+          </label>
+          <div class="erro-msg"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="cartao envio">
+      <div class="alerta" id="alerta" role="alert"></div>
+      <button type="submit" class="enviar" id="enviar"><span class="giro"></span><span id="enviarTexto">Enviar cadastro</span></button>
+      <small id="envioNota">Seus dados vão direto para a coordenação da Índigo Rei.</small>
+    </div>
+  </form>
+
+  <div class="cartao sucesso" id="sucesso" role="status">
+    <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Cadastro recebido!</h2>
+    <p id="sucessoTexto">Obrigado! Suas informações chegaram para a nossa equipe.</p>
+    <p>A equipe da Índigo Rei fala com vocês pelo WhatsApp para os próximos passos.</p>
+  </div>
+
+  <footer class="rodape">
+    <b>Instituto Índigo Rei</b><br>Educação para crianças únicas · @indigo.rei
+  </footer>
+</main>
+
+<template id="tplAprendiz">
+  <div class="cartao bloco aprendiz">
+    <div class="bloco-cab">
+      <h3><span class="etiqueta">Aprendiz <span class="num">1</span></span></h3>
+      <button type="button" class="botao-remover" data-acao="remover" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>Remover
+      </button>
+    </div>
+    <div class="grade">
+      <div class="campo largo" data-campo="nome">
+        <label class="rotulo">Nome completo do(a) aprendiz<span class="obrig">*</span></label>
+        <input type="text" data-k="nome" maxlength="150" autocomplete="off">
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="nascimento">
+        <span class="rotulo">Data de nascimento<span class="obrig">*</span></span>
+        <div class="data3">
+          <select data-k="nascDia" aria-label="Dia"><option value="">Dia</option></select>
+          <select data-k="nascMes" aria-label="Mês"><option value="">Mês</option></select>
+          <select data-k="nascAno" aria-label="Ano"><option value="">Ano</option></select>
+        </div>
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="naturalidade">
+        <label class="rotulo">Naturalidade<span class="obrig">*</span></label>
+        <input type="text" data-k="naturalidade" maxlength="80" placeholder="Cidade/UF. Ex.: Brasília/DF">
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="escola">
+        <label class="rotulo">Escola<span class="obrig">*</span></label>
+        <input type="text" data-k="escola" maxlength="150">
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="serie">
+        <label class="rotulo">Ano/série em que estuda<span class="obrig">*</span></label>
+        <select data-k="serie">
+          <option value="">Selecione</option>
+          <option>Educação Infantil</option>
+          <option>1º ano (Fundamental)</option><option>2º ano (Fundamental)</option><option>3º ano (Fundamental)</option>
+          <option>4º ano (Fundamental)</option><option>5º ano (Fundamental)</option><option>6º ano (Fundamental)</option>
+          <option>7º ano (Fundamental)</option><option>8º ano (Fundamental)</option><option>9º ano (Fundamental)</option>
+          <option>1ª série (Ensino Médio)</option><option>2ª série (Ensino Médio)</option><option>3ª série (Ensino Médio)</option>
+          <option>Outro</option>
+        </select>
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo largo" data-campo="turno">
+        <span class="rotulo">Turno em que estuda</span>
+        <div class="opcoes">
+          <label class="op"><input type="radio" data-k="turno" value="Manhã"><span>Manhã</span></label>
+          <label class="op"><input type="radio" data-k="turno" value="Tarde"><span>Tarde</span></label>
+          <label class="op"><input type="radio" data-k="turno" value="Integral"><span>Integral</span></label>
+        </div>
+      </div>
+      <div class="campo largo" data-campo="objetivos">
+        <label class="rotulo">Quais objetivos ou mudanças vocês gostariam de ver no comportamento ou nas habilidades do(a) aprendiz com o acompanhamento?<span class="obrig">*</span></label>
+        <textarea data-k="objetivos" maxlength="2000"></textarea>
+        <div class="erro-msg"></div>
+      </div>
+    </div>
+
+    <div class="subtitulo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg>
+      <h4>Saúde e desenvolvimento</h4>
+    </div>
+    <p class="nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Estas respostas ficam numa área restrita, separada do restante do cadastro.</p>
+    <div class="pilha">
+      <div class="campo" data-campo="preocupacao">
+        <span class="rotulo">Existe alguma preocupação da família com o comportamento escolar ou com o estado emocional do(a) aprendiz?<span class="obrig">*</span></span>
+        <div class="opcoes">
+          <label class="op"><input type="radio" data-k="preocupacao" value="Sim"><span>Sim</span></label>
+          <label class="op"><input type="radio" data-k="preocupacao" value="Não"><span>Não</span></label>
+        </div>
+        <div class="revela" data-revela="preocupacao=Sim" hidden>
+          <textarea data-k="preocupacaoDetalhe" maxlength="2000" placeholder="Conte um pouco sobre o que vocês observam" aria-label="Detalhes da preocupação"></textarea>
+        </div>
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="diagnostico">
+        <span class="rotulo">Já recebeu diagnóstico de algum transtorno ou dificuldade de aprendizagem?<span class="obrig">*</span></span>
+        <div class="opcoes">
+          <label class="op"><input type="radio" data-k="diagnostico" value="Não"><span>Não</span></label>
+          <label class="op"><input type="radio" data-k="diagnostico" value="Sim"><span>Sim</span></label>
+          <label class="op"><input type="radio" data-k="diagnostico" value="Em investigação"><span>Em investigação</span></label>
+        </div>
+        <div class="revela" data-revela="diagnostico=Sim|Em investigação" hidden>
+          <input type="text" data-k="diagnosticoQual" maxlength="500" placeholder="Qual? Ex.: TDAH, dislexia, TEA" aria-label="Qual diagnóstico">
+        </div>
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="historico">
+        <span class="rotulo">Tem algum histórico médico relevante, como doenças, alergias, hospitalizações ou uso de medicação?<span class="obrig">*</span></span>
+        <div class="opcoes">
+          <label class="op"><input type="radio" data-k="historico" value="Sim"><span>Sim</span></label>
+          <label class="op"><input type="radio" data-k="historico" value="Não"><span>Não</span></label>
+        </div>
+        <div class="revela" data-revela="historico=Sim" hidden>
+          <textarea data-k="historicoDetalhe" maxlength="2000" placeholder="Quais? Se usa medicação, diga qual e em que horário" aria-label="Detalhes do histórico médico"></textarea>
+        </div>
+        <div class="erro-msg"></div>
+      </div>
+      <div class="campo" data-campo="arquivos">
+        <span class="rotulo">Laudos, relatórios ou avaliações anteriores</span>
+        <p class="ajuda">Opcional. PDF ou foto, até 5 arquivos de 10 MB cada.</p>
+        <label class="anexos-zona">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6L15.2 8"/></svg>
+          <span><strong>Anexar arquivos</strong><small>Toque para escolher do celular ou do computador</small></span>
+          <input type="file" class="anexos-input" multiple accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/*" aria-label="Anexar laudos">
+        </label>
+        <ul class="anexos-lista"></ul>
+        <div class="erro-msg"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+/* Endereço do servidor (Apps Script implantado na conta do instituto). */
+var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p_FRQZFKrZW_8n8LRMiRcvcT98Cvkfl-ES5mJFWgTfzwkokI/exec';
+
+(function () {
+  'use strict';
+  var form = document.getElementById('form');
+  var lista = document.getElementById('aprendizes');
+  var tpl = document.getElementById('tplAprendiz');
+  var CHAVE = 'indigo-cadastro-familias-v1';
+  var MAX_APRENDIZES = 4, MAX_ARQS = 5, MAX_MB = 10, MAX_MB_TOTAL = 25;
+  var MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+  var ICONE_ERRO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>';
+  var inicio = Date.now();
+  var tentouEnviar = false;
+  var anexos = new WeakMap(); // cartão do aprendiz -> lista de arquivos preparados
+
+  function el(id) { return document.getElementById(id); }
+  function q(raiz, sel) { return raiz.querySelector(sel); }
+  function qa(raiz, sel) { return Array.prototype.slice.call(raiz.querySelectorAll(sel)); }
+  function valor(raiz, sel) { var e = q(raiz, sel); return e ? String(e.value || '').trim() : ''; }
+  function marcado(raiz, nome, attr) {
+    var r = raiz.querySelector('input[' + (attr || 'name') + '="' + nome + '"]:checked');
+    return r ? r.value : '';
+  }
+  function digitos(s) { return String(s || '').replace(/\D/g, ''); }
+  function palavras(s) { return String(s || '').split(/\s+/).filter(Boolean).length; }
+  function emailOk(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+  function cpfOk(c) {
+    c = digitos(c);
+    if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+    for (var t = 9; t < 11; t++) {
+      var s = 0;
+      for (var i = 0; i < t; i++) s += +c[i] * (t + 1 - i);
+      if (((s * 10) % 11) % 10 !== +c[t]) return false;
+    }
+    return true;
+  }
+  function tamanho(b) { return b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+
+  /* ---------- logo ---------- */
+  el('logo').addEventListener('error', function () { el('logo').hidden = true; el('marca').hidden = false; });
+
+  /* ---------- UF ---------- */
+  UFS.forEach(function (u) { var o = document.createElement('option'); o.value = o.textContent = u; el('uf').appendChild(o); });
+
+  /* ---------- máscaras ---------- */
+  function mascarar(campo) {
+    var tipo = campo.getAttribute('data-mascara'), v = campo.value, n = digitos(v);
+    if (tipo === 'cpf') {
+      n = n.slice(0, 11);
+      campo.value = n.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+    } else if (tipo === 'cep') {
+      n = n.slice(0, 8);
+      campo.value = n.length > 5 ? n.slice(0, 5) + '-' + n.slice(5) : n;
+    } else if (tipo === 'tel') {
+      if (/^\s*\+/.test(v)) return;
+      n = n.slice(0, 11);
+      var f = n;
+      if (n.length > 2) f = '(' + n.slice(0, 2) + ') ' + n.slice(2);
+      if (n.length > 6) f = '(' + n.slice(0, 2) + ') ' + n.slice(2, n.length - 4) + '-' + n.slice(n.length - 4);
+      campo.value = f;
+    }
+  }
+  form.addEventListener('input', function (e) { if (e.target.hasAttribute('data-mascara')) mascarar(e.target); });
+
+  /* ---------- CEP ---------- */
+  var ultimoCep = '';
+  el('cep').addEventListener('input', function () {
+    var c = digitos(el('cep').value);
+    if (c.length !== 8 || c === ultimoCep) return;
+    ultimoCep = c;
+    el('cepStatus').hidden = false;
+    fetch('https://viacep.com.br/ws/' + c + '/json/', { credentials: 'omit' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || d.erro) return;
+        if (d.logradouro) el('logradouro').value = d.logradouro;
+        if (d.bairro) el('bairro').value = d.bairro;
+        if (d.localidade) el('cidade').value = d.localidade;
+        if (d.uf) el('uf').value = d.uf;
+        el('numero').focus();
+        validar(); salvar();
+      })
+      .catch(function () {})
+      .then(function () { el('cepStatus').hidden = true; });
+  });
+
+  /* ---------- condicionais ---------- */
+  function atualizarRevelas(raiz) {
+    qa(raiz, '[data-revela]').forEach(function (bloco) {
+      var partes = bloco.getAttribute('data-revela').split('=');
+      var nome = partes[0], valores = partes[1].split('|');
+      var r = raiz.querySelector('input[name="' + nome + '"]:checked, input[data-k="' + nome + '"]:checked');
+      bloco.hidden = !(r && valores.indexOf(r.value) >= 0);
+    });
+  }
+  function atualizarFamilia() {
+    var temSegundo = el('temSegundo').checked;
+    el('segundoBloco').hidden = !temSegundo;
+    el('opFinSegundo').hidden = !temSegundo;
+    if (!temSegundo && marcado(form, 'finQuem') === 'Segundo contato') {
+      q(form, 'input[name="finQuem"][value="Segundo contato"]').checked = false;
+    }
+    var fin = marcado(form, 'finQuem');
+    el('finSegundoBloco').hidden = fin !== 'Segundo contato';
+    el('finOutroBloco').hidden = fin !== 'Outra pessoa';
+    atualizarRevelas(form);
+  }
+
+  /* ---------- aprendizes ---------- */
+  function preencherDatas(card) {
+    var dia = q(card, '[data-k="nascDia"]'), mes = q(card, '[data-k="nascMes"]'), ano = q(card, '[data-k="nascAno"]');
+    for (var d = 1; d <= 31; d++) { var o = document.createElement('option'); o.value = (d < 10 ? '0' : '') + d; o.textContent = d; dia.appendChild(o); }
+    MESES.forEach(function (m, i) { var o = document.createElement('option'); o.value = (i < 9 ? '0' : '') + (i + 1); o.textContent = m; mes.appendChild(o); });
+    var atual = new Date().getFullYear();
+    for (var a = atual; a >= atual - 25; a--) { var op = document.createElement('option'); op.value = op.textContent = a; ano.appendChild(op); }
+  }
+  function cards() { return qa(lista, '.aprendiz'); }
+  function renumerar() {
+    var cs = cards();
+    cs.forEach(function (c, i) {
+      q(c, '.num').textContent = i + 1;
+      q(c, '[data-acao="remover"]').hidden = cs.length === 1;
+      // nomes únicos para os grupos de rádio de cada cartão
+      qa(c, 'input[type=radio][data-k]').forEach(function (r) { r.name = 'a' + i + '_' + r.getAttribute('data-k'); });
+      qa(c, 'input:not([type=radio]):not([type=file]), select, textarea').forEach(function (x) { if (x.getAttribute('data-k')) x.id = 'a' + i + '_' + x.getAttribute('data-k'); });
+      qa(c, 'label.rotulo').forEach(function (l) {
+        var alvo = l.parentNode.querySelector('input:not([type=radio]):not([type=file]), select, textarea');
+        if (alvo) l.htmlFor = alvo.id;
+      });
+    });
+    el('adicionar').hidden = cs.length >= MAX_APRENDIZES;
+  }
+  function novoAprendiz(focar) {
+    var frag = tpl.content.cloneNode(true);
+    var card = frag.querySelector('.aprendiz');
+    preencherDatas(card);
+    anexos.set(card, []);
+    var input = q(card, '.anexos-input');
+    input.addEventListener('change', function () { receberArquivos(card, input.files); input.value = ''; });
+    var zona = q(card, '.anexos-zona');
+    ['dragenter', 'dragover'].forEach(function (ev) { zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastando'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('arrastando'); }); });
+    zona.addEventListener('drop', function (e) { if (e.dataTransfer.files) receberArquivos(card, e.dataTransfer.files); });
+    q(card, '[data-acao="remover"]').addEventListener('click', function () {
+      card.remove(); renumerar(); validar(); salvar();
+    });
+    lista.appendChild(card);
+    renumerar();
+    if (focar) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function () { q(card, '[data-k="nome"]').focus({ preventScroll: true }); }, 350);
+    }
+    return card;
+  }
+  el('adicionar').addEventListener('click', function () { if (cards().length < MAX_APRENDIZES) { novoAprendiz(true); validar(); salvar(); } });
+
+  /* ---------- anexos ---------- */
+  function totalAnexos() {
+    return cards().reduce(function (s, c) { return s + anexos.get(c).reduce(function (t, a) { return t + a.bytes; }, 0); }, 0);
+  }
+  function lerBase64(blob) {
+    return new Promise(function (ok, falha) {
+      var r = new FileReader();
+      r.onload = function () { ok(String(r.result).split(',')[1]); };
+      r.onerror = function () { falha(new Error('Não consegui ler o arquivo.')); };
+      r.readAsDataURL(blob);
+    });
+  }
+  function comprimirImagem(arquivo) {
+    return new Promise(function (ok, falha) {
+      var url = URL.createObjectURL(arquivo), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var max = 2200, esc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * esc); c.height = Math.round(img.naturalHeight * esc);
+        var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        var dataUrl = c.toDataURL('image/jpeg', 0.85);
+        var b64 = dataUrl.split(',')[1];
+        ok({ base64: b64, tipo: 'image/jpeg', bytes: Math.round(b64.length * 0.75), nome: arquivo.name.replace(/\.[^.]+$/, '') + '.jpg' });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir a imagem "' + arquivo.name + '". Se for do iPhone, envie em JPG ou PDF.')); };
+      img.src = url;
+    });
+  }
+  function prepararArquivo(arquivo) {
+    if (arquivo.type === 'application/pdf' || /\.pdf$/i.test(arquivo.name)) {
+      if (arquivo.size > MAX_MB * 1048576) return Promise.reject(new Error('"' + arquivo.name + '" passa de ' + MAX_MB + ' MB.'));
+      return lerBase64(arquivo).then(function (b64) { return { base64: b64, tipo: 'application/pdf', bytes: arquivo.size, nome: arquivo.name }; });
+    }
+    if (/^image\//.test(arquivo.type) || /\.(jpe?g|png|heic|heif)$/i.test(arquivo.name)) {
+      if (arquivo.size > 40 * 1048576) return Promise.reject(new Error('"' + arquivo.name + '" é grande demais.'));
+      return comprimirImagem(arquivo);
+    }
+    return Promise.reject(new Error('"' + arquivo.name + '" não é PDF nem foto.'));
+  }
+  function desenharAnexos(card) {
+    var ul = q(card, '.anexos-lista'); ul.innerHTML = '';
+    anexos.get(card).forEach(function (a, i) {
+      var li = document.createElement('li');
+      var nome = document.createElement('span'); nome.className = 'nome-arq'; nome.textContent = a.nome;
+      var tam = document.createElement('span'); tam.className = 'tam'; tam.textContent = tamanho(a.bytes);
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Remover';
+      b.addEventListener('click', function () { anexos.get(card).splice(i, 1); desenharAnexos(card); validar(); });
+      li.appendChild(nome); li.appendChild(tam); li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function receberArquivos(card, files) {
+    var campo = q(card, '[data-campo="arquivos"]');
+    var atuais = anexos.get(card);
+    var novos = Array.prototype.slice.call(files || []);
+    if (atuais.length + novos.length > MAX_ARQS) { mostrarErro(campo, 'No máximo ' + MAX_ARQS + ' arquivos por aprendiz.'); novos = novos.slice(0, MAX_ARQS - atuais.length); }
+    var zona = q(card, '.anexos-zona strong'); zona.textContent = 'Preparando...';
+    Promise.all(novos.map(function (f) { return prepararArquivo(f).then(function (x) { return { ok: x }; }, function (e) { return { erro: e.message }; }); }))
+      .then(function (res) {
+        var erros = [];
+        res.forEach(function (r) {
+          if (r.erro) { erros.push(r.erro); return; }
+          if (totalAnexos() + r.ok.bytes > MAX_MB_TOTAL * 1048576) { erros.push('Os anexos somados passam de ' + MAX_MB_TOTAL + ' MB.'); return; }
+          atuais.push(r.ok);
+        });
+        zona.textContent = 'Anexar arquivos';
+        desenharAnexos(card);
+        mostrarErro(campo, erros.join(' '));
+      });
+  }
+
+  /* ---------- validação ---------- */
+  function mostrarErro(campo, msg) {
+    if (!campo) return;
+    var m = campo.querySelector(':scope > .erro-msg');
+    if (!m) return;
+    m.innerHTML = '';
+    if (msg) { m.innerHTML = ICONE_ERRO; var s = document.createElement('span'); s.textContent = msg; m.appendChild(s); }
+    campo.classList.toggle('tem-erro', !!msg);
+  }
+  function dataAprendiz(c) {
+    var d = valor(c, '[data-k="nascDia"]'), m = valor(c, '[data-k="nascMes"]'), a = valor(c, '[data-k="nascAno"]');
+    if (!d || !m || !a) return '';
+    var dt = new Date(+a, +m - 1, +d);
+    if (dt.getDate() !== +d || dt > new Date()) return 'invalida';
+    return d + '/' + m + '/' + a;
+  }
+  function regrasAprendiz(c) {
+    var k = function (x) { return valor(c, '[data-k="' + x + '"]'); };
+    var r = function (x) { return marcado(c, x, 'data-k'); };
+    return [
+      ['nome', palavras(k('nome')) >= 2, 'Escreva nome e sobrenome.'],
+      ['nascimento', dataAprendiz(c) && dataAprendiz(c) !== 'invalida', dataAprendiz(c) === 'invalida' ? 'Confira a data.' : 'Escolha dia, mês e ano.'],
+      ['naturalidade', !!k('naturalidade'), 'Informe a cidade e o estado onde nasceu.'],
+      ['escola', !!k('escola'), 'Informe a escola.'],
+      ['serie', !!k('serie'), 'Escolha o ano ou a série.'],
+      ['objetivos', k('objetivos').length >= 5, 'Conte o que vocês esperam do acompanhamento.'],
+      ['preocupacao', !!r('preocupacao') && (r('preocupacao') === 'Não' || !!k('preocupacaoDetalhe')), r('preocupacao') === 'Sim' ? 'Conte um pouco sobre a preocupação.' : 'Escolha uma opção.'],
+      ['diagnostico', !!r('diagnostico') && (r('diagnostico') === 'Não' || !!k('diagnosticoQual')), r('diagnostico') ? 'Diga qual é o diagnóstico.' : 'Escolha uma opção.'],
+      ['historico', !!r('historico') && (r('historico') === 'Não' || !!k('historicoDetalhe')), r('historico') === 'Sim' ? 'Conte qual é o histórico.' : 'Escolha uma opção.']
+    ];
+  }
+  function regrasFamilia() {
+    var v = function (id) { return String(el(id).value || '').trim(); };
+    var temSegundo = el('temSegundo').checked, fin = marcado(form, 'finQuem');
+    var parent = marcado(form, 'respParentesco'), parent2 = marcado(form, 'c2Parentesco');
+    var regras = [
+      ['respNome', palavras(v('respNome')) >= 2, 'Escreva nome e sobrenome.'],
+      ['respParentesco', !!parent && (parent !== 'Outro' || !!v('respParentescoOutro')), parent === 'Outro' ? 'Diga qual é o parentesco.' : 'Escolha uma opção.'],
+      ['respCpf', cpfOk(v('respCpf')), digitos(v('respCpf')).length === 11 ? 'Este CPF não é válido. Confira os números.' : 'Informe o CPF.'],
+      ['respRg', v('respRg').length >= 4, 'Informe o RG.'],
+      ['respEstadoCivil', !!v('respEstadoCivil'), 'Escolha uma opção.'],
+      ['respTelefone', digitos(v('respTelefone')).length >= 10, 'Informe o WhatsApp com DDD.'],
+      ['respEmail', emailOk(v('respEmail')), 'Confira o e-mail.'],
+      ['cep', digitos(v('cep')).length === 8, 'Informe o CEP.'],
+      ['logradouro', !!v('logradouro'), 'Informe o endereço.'],
+      ['numero', !!v('numero'), 'Informe o número ou S/N.'],
+      ['bairro', !!v('bairro'), 'Informe o bairro.'],
+      ['cidade', !!v('cidade'), 'Informe a cidade.'],
+      ['uf', !!v('uf'), 'Escolha.'],
+      ['finQuem', !!fin, 'Escolha quem cuida dos pagamentos.'],
+      ['autorizaImagem', !!marcado(form, 'autorizaImagem'), 'Escolha uma opção.'],
+      ['consentimentos', el('consentimento').checked && el('declaracao').checked, 'Marque as duas confirmações para enviar.']
+    ];
+    if (temSegundo) {
+      regras.push(['c2Nome', palavras(v('c2Nome')) >= 2, 'Escreva nome e sobrenome.']);
+      regras.push(['c2Parentesco', !!parent2 && (parent2 !== 'Outro' || !!v('c2ParentescoOutro')), parent2 === 'Outro' ? 'Diga qual é o parentesco.' : 'Escolha uma opção.']);
+      regras.push(['c2Telefone', digitos(v('c2Telefone')).length >= 10, 'Informe o WhatsApp com DDD.']);
+      regras.push(['c2Email', !v('c2Email') || emailOk(v('c2Email')), 'Confira o e-mail.']);
+    }
+    if (fin === 'Segundo contato') regras.push(['finCpfSegundo', cpfOk(v('finCpfSegundo')), 'Informe um CPF válido.']);
+    if (fin === 'Outra pessoa') {
+      regras.push(['finNome', palavras(v('finNome')) >= 2, 'Escreva nome e sobrenome.']);
+      regras.push(['finCpf', cpfOk(v('finCpf')), 'Informe um CPF válido.']);
+      regras.push(['finTelefone', digitos(v('finTelefone')).length >= 10, 'Informe o WhatsApp com DDD.']);
+      regras.push(['finEmail', emailOk(v('finEmail')), 'Confira o e-mail.']);
+    }
+    return regras;
+  }
+  function validar() {
+    var erros = [], ok = 0, total = 0;
+    function aplicar(raiz, regras) {
+      regras.forEach(function (r) {
+        total++;
+        var campo = raiz.querySelector('[data-campo="' + r[0] + '"]');
+        if (r[1]) ok++; else erros.push(campo);
+        if (tentouEnviar) mostrarErro(campo, r[1] ? '' : r[2]);
+      });
+    }
+    cards().forEach(function (c) { aplicar(c, regrasAprendiz(c)); });
+    aplicar(form, regrasFamilia());
+    el('barra').style.width = Math.round(ok / Math.max(total, 1) * 100) + '%';
+    return erros;
+  }
+
+  form.addEventListener('change', function (e) {
+    var card = e.target.closest('.aprendiz');
+    if (card) atualizarRevelas(card);
+    atualizarFamilia();
+    validar(); salvar();
+  });
+  form.addEventListener('input', function () { validar(); salvar(); });
+
+  /* ---------- rascunho (sem CPF, RG, anexos e autorizações) ---------- */
+  var NAO_SALVAR = ['respCpf', 'respRg', 'finCpf', 'finCpfSegundo', 'consentimento', 'declaracao', 'site'];
+  function dadosCampos(raiz, attr, pularAprendizes) {
+    var d = {};
+    qa(raiz, 'input, select, textarea').forEach(function (x) {
+      var k = x.getAttribute(attr);
+      if (!k || x.type === 'file' || NAO_SALVAR.indexOf(k) >= 0) return;
+      if (pularAprendizes && x.closest('.aprendiz')) return;
+      if (x.type === 'radio') { if (x.checked) d[k] = x.value; }
+      else if (x.type === 'checkbox') d[k] = x.checked;
+      else d[k] = x.value;
+    });
+    return d;
+  }
+  function aplicarCampos(raiz, attr, d) {
+    qa(raiz, 'input, select, textarea').forEach(function (x) {
+      var k = x.getAttribute(attr);
+      if (!k || !(k in d) || x.type === 'file') return;
+      if (x.type === 'radio') x.checked = d[k] === x.value;
+      else if (x.type === 'checkbox') x.checked = !!d[k];
+      else x.value = d[k];
+    });
+  }
+  var timerSalvar = null, enviado = false;
+  function salvarAgora() {
+    clearTimeout(timerSalvar);
+    if (enviado) return;
+    try {
+      var rascunho = {
+        familia: dadosCampos(form, 'name', true),
+        aprendizes: cards().map(function (c) { return dadosCampos(c, 'data-k'); })
+      };
+      window.localStorage.setItem(CHAVE, JSON.stringify(rascunho));
+    } catch (e) {}
+  }
+  function salvar() { clearTimeout(timerSalvar); timerSalvar = setTimeout(salvarAgora, 300); }
+  window.addEventListener('pagehide', salvarAgora);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') salvarAgora(); });
+  function restaurar() {
+    var r = null;
+    try { r = JSON.parse(window.localStorage.getItem(CHAVE) || 'null'); } catch (e) {}
+    var qtd = r && Array.isArray(r.aprendizes) && r.aprendizes.length ? Math.min(r.aprendizes.length, MAX_APRENDIZES) : 1;
+    for (var i = 0; i < qtd; i++) novoAprendiz(false);
+    if (!r) return;
+    cards().forEach(function (c, i) { aplicarCampos(c, 'data-k', r.aprendizes[i] || {}); atualizarRevelas(c); });
+    var fam = r.familia || {};
+    qa(form, 'input[name], select[name], textarea[name]').forEach(function (x) {
+      var k = x.name;
+      if (x.closest('.aprendiz') || !(k in fam) || x.type === 'file') return;
+      if (x.type === 'radio') x.checked = fam[k] === x.value;
+      else if (x.type === 'checkbox') x.checked = !!fam[k];
+      else x.value = fam[k];
+    });
+  }
+  function limparRascunho() { try { window.localStorage.removeItem(CHAVE); } catch (e) {} }
+
+  /* ---------- envio ---------- */
+  function coletar() {
+    var v = function (id) { return String(el(id).value || '').trim(); };
+    var parent = marcado(form, 'respParentesco'), parent2 = marcado(form, 'c2Parentesco');
+    var temSegundo = el('temSegundo').checked, fin = marcado(form, 'finQuem');
+    var estado = v('respEstadoCivil');
+    return {
+      site: v('site'),
+      tempo: Date.now() - inicio,
+      aprendizes: cards().map(function (c) {
+        var k = function (x) { return valor(c, '[data-k="' + x + '"]'); };
+        var r = function (x) { return marcado(c, x, 'data-k'); };
+        return {
+          nome: k('nome'), nascimento: dataAprendiz(c), naturalidade: k('naturalidade'), escola: k('escola'),
+          serie: k('serie'), turno: r('turno'), objetivos: k('objetivos'),
+          preocupacao: r('preocupacao'), preocupacaoDetalhe: r('preocupacao') === 'Sim' ? k('preocupacaoDetalhe') : '',
+          diagnostico: r('diagnostico'), diagnosticoQual: r('diagnostico') !== 'Não' ? k('diagnosticoQual') : '',
+          historico: r('historico'), historicoDetalhe: r('historico') === 'Sim' ? k('historicoDetalhe') : '',
+          arquivos: anexos.get(c).map(function (a) { return { nome: a.nome, tipo: a.tipo, base64: a.base64 }; })
+        };
+      }),
+      respNome: v('respNome'),
+      respParentesco: parent === 'Outro' ? 'Outro: ' + v('respParentescoOutro') : parent,
+      respCpf: v('respCpf'), respRg: v('respRg'), respProfissao: v('respProfissao'), respEstadoCivil: estado,
+      respTelefone: v('respTelefone'), respEmail: v('respEmail'),
+      cep: v('cep'), logradouro: v('logradouro'), numero: v('numero'), complemento: v('complemento'),
+      bairro: v('bairro'), cidade: v('cidade'), uf: v('uf'),
+      c2Nome: temSegundo ? v('c2Nome') : '',
+      c2Parentesco: temSegundo ? (parent2 === 'Outro' ? 'Outro: ' + v('c2ParentescoOutro') : parent2) : '',
+      c2Telefone: temSegundo ? v('c2Telefone') : '',
+      c2Email: temSegundo ? v('c2Email') : '',
+      finQuem: fin,
+      finNome: fin === 'Outra pessoa' ? v('finNome') : '',
+      finCpf: fin === 'Outra pessoa' ? v('finCpf') : (fin === 'Segundo contato' ? v('finCpfSegundo') : ''),
+      finTelefone: fin === 'Outra pessoa' ? v('finTelefone') : '',
+      finEmail: fin === 'Outra pessoa' ? v('finEmail') : '',
+      autorizaImagem: marcado(form, 'autorizaImagem'),
+      consentimento: el('consentimento').checked,
+      declaracao: el('declaracao').checked
+    };
+  }
+  function enviando(sim, texto) {
+    var b = el('enviar');
+    b.disabled = sim; b.classList.toggle('enviando', sim);
+    el('enviarTexto').textContent = sim ? (texto || 'Enviando...') : 'Enviar cadastro';
+  }
+  function alerta(msg) { var a = el('alerta'); a.textContent = msg || ''; a.classList.toggle('visivel', !!msg); }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    alerta('');
+    tentouEnviar = true;
+    var erros = validar();
+    if (erros.length) {
+      alerta(erros.length === 1 ? 'Falta 1 resposta. Ela está marcada em vermelho acima.' : 'Faltam ' + erros.length + ' respostas. Elas estão marcadas em vermelho acima.');
+      var c = erros[0];
+      if (c) {
+        c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        var f = c.querySelector('input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea');
+        if (f && !f.closest('[hidden]')) setTimeout(function () { f.focus({ preventScroll: true }); }, 400);
+      }
+      return;
+    }
+    if (!/^https:\/\/script\.google\.com\//.test(URL_SERVIDOR)) { alerta('O formulário ainda não está ligado ao servidor. Avise a equipe da Índigo Rei.'); return; }
+    var dados = coletar();
+    var temAnexo = dados.aprendizes.some(function (a) { return a.arquivos.length; });
+    enviando(true, temAnexo ? 'Enviando os anexos...' : 'Enviando...');
+    fetch(URL_SERVIDOR, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dados),
+      credentials: 'omit',
+      redirect: 'follow'
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        enviando(false);
+        if (!res || !res.ok) throw new Error(res && res.erro ? res.erro : 'Não foi possível enviar.');
+        enviado = true;
+        clearTimeout(timerSalvar);
+        limparRascunho();
+        el('sucessoTexto').textContent = (res.primeiroNome ? 'Obrigado, ' + res.primeiroNome + '! ' : 'Obrigado! ') + 'O cadastro chegou para a nossa equipe.';
+        form.hidden = true;
+        el('sucesso').classList.add('visivel');
+        el('barra').style.width = '100%';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(function (err) {
+        enviando(false);
+        var msg = String(err && err.message ? err.message : err || '');
+        if (/Failed to fetch|NetworkError|Load failed|JSON/i.test(msg)) msg = 'Verifique sua internet e tente de novo. Se continuar, fale com a equipe pelo WhatsApp.';
+        alerta('Não foi possível enviar. ' + msg);
+      });
+  });
+
+  /* ---------- início ---------- */
+  restaurar();
+  atualizarFamilia();
+  validar();
+  // Acorda o servidor enquanto a família preenche, para o envio ser rápido.
+  if (/^https:\/\/script\.google\.com\//.test(URL_SERVIDOR)) {
+    try { fetch(URL_SERVIDOR, { credentials: 'omit' }).catch(function () {}); } catch (e) {}
+  }
+})();
+</script>
+</body>
+</html>
