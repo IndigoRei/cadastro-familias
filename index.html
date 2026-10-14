@@ -186,7 +186,6 @@
   .sucesso .icone svg{width:36px;height:36px;color:var(--gold-2)}
   .sucesso h2{color:var(--navy);font-size:24px;margin:0 0 10px;font-weight:600}
   .sucesso p{color:#38414E;margin:0 auto 10px;max-width:480px}
-  .sucesso .numero{display:inline-block;margin:6px auto 16px;padding:10px 16px;border-radius:10px;background:var(--gold-soft);color:var(--navy);font-weight:600;letter-spacing:.02em}
   .envio small.atencao{color:var(--navy);font-weight:600}
   .rodape{text-align:center;color:var(--muted);font-size:12.5px;margin-top:28px}
   .rodape b{color:var(--navy);font-weight:600}
@@ -499,7 +498,6 @@
     <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
     <h2>Cadastro recebido!</h2>
     <p id="sucessoTexto">Obrigado! Suas informações chegaram para a nossa equipe.</p>
-    <p class="numero" id="sucessoNumero" hidden></p>
     <p>A equipe da Índigo Rei fala com vocês pelo WhatsApp para os próximos passos.</p>
   </div>
 
@@ -1084,7 +1082,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     emEnvio = sim;
     b.disabled = sim; b.classList.toggle('enviando', sim);
     el('enviarTexto').textContent = sim ? (texto || 'Enviando...') : 'Enviar cadastro';
-    nota.textContent = sim ? 'Não feche esta página até aparecer a confirmação com o número do cadastro.' : NOTA_PADRAO;
+    nota.textContent = sim ? 'Não feche esta página até aparecer a confirmação.' : NOTA_PADRAO;
     nota.classList.toggle('atencao', sim);
   }
   function alerta(msg) { var a = el('alerta'); a.textContent = msg || ''; a.classList.toggle('visivel', !!msg); }
@@ -1123,14 +1121,12 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       .then(function (res) {
         enviando(false);
         if (!res || !res.ok) { var e1 = new Error(res && res.erro ? res.erro : 'Não foi possível enviar.'); e1.doServidor = true; throw e1; }
-        // Só conta como enviado quando o servidor devolve o número do cadastro gravado.
+        // Só conta como enviado quando o servidor devolve o código do cadastro gravado (não é mostrado à família).
         if (!res.envio) { var e2 = new Error('A confirmação não chegou. Tente de novo em instantes. Se continuar, fale com a equipe pelo WhatsApp.'); e2.semNumero = true; throw e2; }
         enviado = true;
         clearTimeout(timerSalvar);
         limparRascunho();
         el('sucessoTexto').textContent = (res.primeiroNome ? 'Obrigado, ' + res.primeiroNome + '! ' : 'Obrigado! ') + 'O cadastro chegou para a nossa equipe.';
-        el('sucessoNumero').textContent = 'Número do cadastro: ' + res.envio;
-        el('sucessoNumero').hidden = false;
         form.hidden = true;
         el('sucesso').classList.add('visivel');
         el('barra').style.width = '100%';
