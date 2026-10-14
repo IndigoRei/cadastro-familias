@@ -115,8 +115,11 @@ const OPCOES = {
 /* Entradas web                                                        */
 /* ------------------------------------------------------------------ */
 
-function doGet() {
-  // Usado pela página para "acordar" o servidor antes do envio.
+function doGet(e) {
+  // Sem parâmetros: a página "acorda" o servidor antes do envio.
+  // Com ?evento=...: a página registra uma tentativa ou falha de envio (sem dados pessoais).
+  const p = (e && e.parameter) || {};
+  if (p.evento) registrarDiagnostico_(p);
   return json_({ ok: true, servico: 'cadastro-familias' });
 }
 
@@ -125,7 +128,9 @@ function doPost(e) {
     const dados = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     return json_(registrar_(dados));
   } catch (err) {
-    return json_({ ok: false, erro: String(err && err.message ? err.message : err) });
+    const msg = String(err && err.message ? err.message : err);
+    registrarDiagnostico_({ evento: 'recusado pelo servidor', tipo: 'servidor', detalhe: msg });
+    return json_({ ok: false, erro: msg });
   }
 }
 
@@ -198,9 +203,11 @@ function prepararPlanilha_(planilha, abas) {
 
 function registrar_(d) {
   if (!d || typeof d !== 'object') throw new Error('Envio inválido. Recarregue a página e tente de novo.');
-  // Proteção simples contra robôs: campo escondido preenchido ou envio rápido demais.
-  if (d.site) return { ok: true };
+  // Proteção simples contra robôs: envio rápido demais é recusado com mensagem.
+  // O campo escondido preenchido só gera um aviso: o preenchimento automático do
+  // navegador pode completá-lo sem a família saber, e um cadastro real não pode sumir.
   if (typeof d.tempo === 'number' && d.tempo < 8000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
+  if (d.site) registrarDiagnostico_({ evento: 'campo escondido preenchido', tipo: 'aviso', detalhe: 'O cadastro foi gravado normalmente. Confira se é de uma família real.' });
 
   const props = PropertiesService.getScriptProperties();
   const planilha = planilha_(props.getProperty('PLANILHA_ID'));
@@ -400,6 +407,40 @@ function gravar_(aba, colunas, objetos) {
   aba.getRange(inicio, 1, linhas.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   aba.getRange(inicio, 2, linhas.length, colunas.length - 1).setNumberFormat('@');
   aba.getRange(inicio, 1, linhas.length, colunas.length).setValues(linhas).setWrap(true).setVerticalAlignment('top');
+}
+
+// Registro de tentativas e falhas de envio, sem nenhum dado pessoal: só o tipo do
+// problema, o tamanho do envio e o aparelho. Fica na aba Diagnóstico da planilha.
+const COL_DIAGNOSTICO = ['Data e hora', 'Evento', 'Tipo', 'Detalhe', 'Tamanho (MB)', 'Anexos', 'Aprendizes', 'Aparelho', 'Segundos na página', 'Versão da página'];
+
+function registrarDiagnostico_(p) {
+  try {
+    const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('PLANILHA_ID'));
+    if (!planilha) return;
+    const trava = LockService.getScriptLock();
+    if (!trava.tryLock(10000)) return;
+    try {
+      let aba = planilha.getSheetByName('Diagnóstico');
+      if (!aba) {
+        aba = planilha.insertSheet('Diagnóstico');
+        aba.getRange(1, 1, 1, COL_DIAGNOSTICO.length).setValues([COL_DIAGNOSTICO])
+          .setFontWeight('bold').setBackground('#062D56').setFontColor('#FFFFFF');
+        aba.setFrozenRows(1);
+        aba.setColumnWidth(4, 420);
+      }
+      const t = function (v, n) { return protegerCelula_(txt_(v, n || 60)); };
+      const linha = [new Date(), t(p.evento), t(p.tipo), t(p.detalhe, 400), t(p.mb, 10), t(p.anexos, 5),
+        t(p.aprendizes, 5), t(p.aparelho, 60), t(p.segundos, 10), t(p.versao, 10)];
+      const i = Math.max(aba.getLastRow(), 1) + 1;
+      aba.getRange(i, 1).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+      aba.getRange(i, 2, 1, linha.length - 1).setNumberFormat('@');
+      aba.getRange(i, 1, 1, linha.length).setValues([linha]).setVerticalAlignment('top');
+    } finally {
+      trava.releaseLock();
+    }
+  } catch (err) {
+    // O diagnóstico nunca pode atrapalhar o cadastro.
+  }
 }
 
 // Aviso por e-mail sem nenhum dado de saúde: só quem se cadastrou e o link da planilha.

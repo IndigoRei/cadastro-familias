@@ -186,6 +186,8 @@
   .sucesso .icone svg{width:36px;height:36px;color:var(--gold-2)}
   .sucesso h2{color:var(--navy);font-size:24px;margin:0 0 10px;font-weight:600}
   .sucesso p{color:#38414E;margin:0 auto 10px;max-width:480px}
+  .sucesso .numero{display:inline-block;margin:6px auto 16px;padding:10px 16px;border-radius:10px;background:var(--gold-soft);color:var(--navy);font-weight:600;letter-spacing:.02em}
+  .envio small.atencao{color:var(--navy);font-weight:600}
   .rodape{text-align:center;color:var(--muted);font-size:12.5px;margin-top:28px}
   .rodape b{color:var(--navy);font-weight:600}
   .pote{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -232,7 +234,7 @@
   </header>
 
   <form id="form" novalidate autocomplete="on">
-    <div class="pote" aria-hidden="true"><label>Não preencha <input type="text" name="site" id="site" tabindex="-1" autocomplete="off"></label></div>
+    <div class="pote" aria-hidden="true"><label>Deixe em branco <input type="text" name="zz_deixe_vazio" id="zzVazio" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore></label></div>
 
     <!-- 1. Aprendizes -->
     <section class="secao">
@@ -497,6 +499,7 @@
     <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
     <h2>Cadastro recebido!</h2>
     <p id="sucessoTexto">Obrigado! Suas informações chegaram para a nossa equipe.</p>
+    <p class="numero" id="sucessoNumero" hidden></p>
     <p>A equipe da Índigo Rei fala com vocês pelo WhatsApp para os próximos passos.</p>
   </div>
 
@@ -636,6 +639,38 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
   var ICONE_ERRO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>';
   var inicio = Date.now();
+  var VERSAO_PAGINA = '2';
+  var emEnvio = false;
+
+  /* Diagnóstico de envio: só tipo do problema, tamanho e aparelho. Nenhum dado pessoal. */
+  function aparelho() {
+    var u = navigator.userAgent || '';
+    var so = /iPhone|iPad|iPod/.test(u) ? 'iPhone/iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac OS X/.test(u) ? 'Mac' : 'outro';
+    var nav = /Instagram/.test(u) ? 'navegador do Instagram' : /FBAN|FBAV/.test(u) ? 'navegador do Facebook' : /WhatsApp/.test(u) ? 'navegador do WhatsApp' :
+      /SamsungBrowser/.test(u) ? 'Samsung Internet' : /Edg\//.test(u) ? 'Edge' : /CriOS|Chrome\//.test(u) ? 'Chrome' : /FxiOS|Firefox\//.test(u) ? 'Firefox' : /Safari\//.test(u) ? 'Safari' : 'outro';
+    return so + ', ' + nav;
+  }
+  function diagnostico(evento, tipo, detalhe, dados) {
+    try {
+      if (!/^https:\/\/script\.google\.com\//.test(URL_SERVIDOR)) return;
+      var anexosQtd = 0, aprendizesQtd = 0, mb = '';
+      if (dados) {
+        aprendizesQtd = dados.aprendizes.length;
+        dados.aprendizes.forEach(function (a) { anexosQtd += a.arquivos.length; });
+        mb = (JSON.stringify(dados).length / 1048576).toFixed(1);
+      }
+      var q = 'evento=' + encodeURIComponent(evento) + '&tipo=' + encodeURIComponent(tipo || '') +
+        '&detalhe=' + encodeURIComponent(String(detalhe || '').slice(0, 380)) + '&mb=' + mb +
+        '&anexos=' + anexosQtd + '&aprendizes=' + aprendizesQtd + '&aparelho=' + encodeURIComponent(aparelho()) +
+        '&segundos=' + Math.round((Date.now() - inicio) / 1000) + '&versao=' + VERSAO_PAGINA;
+      fetch(URL_SERVIDOR + '?' + q, { credentials: 'omit', keepalive: true }).catch(function () {});
+    } catch (e) {}
+  }
+  window.addEventListener('beforeunload', function (e) {
+    if (!emEnvio) return;
+    diagnostico('página fechada durante o envio', 'interrompido', '');
+    e.preventDefault(); e.returnValue = '';
+  });
   var tentouEnviar = false;
   var anexos = new WeakMap(); // cartão do aprendiz -> lista de arquivos preparados
 
@@ -945,7 +980,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   form.addEventListener('input', function () { validar(); salvar(); });
 
   /* ---------- rascunho (sem CPF, RG, anexos e autorizações) ---------- */
-  var NAO_SALVAR = ['respCpf', 'respRg', 'finCpf', 'finCpfSegundo', 'consentimento', 'declaracao', 'site'];
+  var NAO_SALVAR = ['respCpf', 'respRg', 'finCpf', 'finCpfSegundo', 'consentimento', 'declaracao', 'zz_deixe_vazio'];
   function dadosCampos(raiz, attr, pularAprendizes) {
     var d = {};
     qa(raiz, 'input, select, textarea').forEach(function (x) {
@@ -1007,7 +1042,8 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     var temSegundo = el('temSegundo').checked, fin = marcado(form, 'finQuem');
     var estado = v('respEstadoCivil');
     return {
-      site: v('site'),
+      site: v('zzVazio'),
+      versao: VERSAO_PAGINA,
       tempo: Date.now() - inicio,
       aprendizes: cards().map(function (c) {
         var k = function (x) { return valor(c, '[data-k="' + x + '"]'); };
@@ -1041,10 +1077,15 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       declaracao: el('declaracao').checked
     };
   }
+  var NOTA_PADRAO = null;
   function enviando(sim, texto) {
-    var b = el('enviar');
+    var b = el('enviar'), nota = el('envioNota');
+    if (NOTA_PADRAO === null) NOTA_PADRAO = nota.textContent;
+    emEnvio = sim;
     b.disabled = sim; b.classList.toggle('enviando', sim);
     el('enviarTexto').textContent = sim ? (texto || 'Enviando...') : 'Enviar cadastro';
+    nota.textContent = sim ? 'Não feche esta página até aparecer a confirmação com o número do cadastro.' : NOTA_PADRAO;
+    nota.classList.toggle('atencao', sim);
   }
   function alerta(msg) { var a = el('alerta'); a.textContent = msg || ''; a.classList.toggle('visivel', !!msg); }
 
@@ -1055,6 +1096,9 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     var erros = validar();
     if (erros.length) {
       alerta(erros.length === 1 ? 'Falta 1 resposta. Ela está marcada em vermelho acima.' : 'Faltam ' + erros.length + ' respostas. Elas estão marcadas em vermelho acima.');
+      diagnostico('respostas faltando', 'validacao', erros.map(function (c) {
+        return (c && c.getAttribute('data-campo')) || '?';
+      }).join(', '));
       var c = erros[0];
       if (c) {
         c.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1067,6 +1111,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     var dados = coletar();
     var temAnexo = dados.aprendizes.some(function (a) { return a.arquivos.length; });
     enviando(true, temAnexo ? 'Enviando os anexos...' : 'Enviando...');
+    diagnostico('envio iniciado', 'inicio', '', dados);
     fetch(URL_SERVIDOR, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1077,11 +1122,15 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       .then(function (r) { return r.json(); })
       .then(function (res) {
         enviando(false);
-        if (!res || !res.ok) throw new Error(res && res.erro ? res.erro : 'Não foi possível enviar.');
+        if (!res || !res.ok) { var e1 = new Error(res && res.erro ? res.erro : 'Não foi possível enviar.'); e1.doServidor = true; throw e1; }
+        // Só conta como enviado quando o servidor devolve o número do cadastro gravado.
+        if (!res.envio) { var e2 = new Error('A confirmação não chegou. Tente de novo em instantes. Se continuar, fale com a equipe pelo WhatsApp.'); e2.semNumero = true; throw e2; }
         enviado = true;
         clearTimeout(timerSalvar);
         limparRascunho();
         el('sucessoTexto').textContent = (res.primeiroNome ? 'Obrigado, ' + res.primeiroNome + '! ' : 'Obrigado! ') + 'O cadastro chegou para a nossa equipe.';
+        el('sucessoNumero').textContent = 'Número do cadastro: ' + res.envio;
+        el('sucessoNumero').hidden = false;
         form.hidden = true;
         el('sucesso').classList.add('visivel');
         el('barra').style.width = '100%';
@@ -1090,6 +1139,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       .catch(function (err) {
         enviando(false);
         var msg = String(err && err.message ? err.message : err || '');
+        if (!(err && err.doServidor)) diagnostico(err && err.semNumero ? 'resposta sem número' : 'falha de conexão', err && err.semNumero ? 'sem-confirmacao' : 'rede', msg, dados);
         if (/Failed to fetch|NetworkError|Load failed|JSON/i.test(msg)) msg = 'Verifique sua internet e tente de novo. Se continuar, fale com a equipe pelo WhatsApp.';
         alerta('Não foi possível enviar. ' + msg);
       });
