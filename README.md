@@ -11,6 +11,7 @@ Este repositório tem só o código. **Nenhum dado de família fica aqui.**
   - Planilha **Cadastro das Famílias (respostas)**: abas Famílias e Aprendizes, só dados de cadastro. É a base que entra na importação do Sistema Índigo Rei.
   - Pasta **Saúde e laudos (restrito)**: planilha de saúde e os laudos, uma subpasta por aprendiz. Não compartilhar. Dados de saúde não entram no sistema antes da fase da área clínica (planta, seção 10).
 - A cada cadastro novo, o instituto recebe um e-mail de aviso, sem nenhum dado de saúde.
+- **Sistema Índigo Rei:** cada envio também vai, sem dados de saúde, para a caixa "Cadastros recebidos" do sistema (sistema.indigorei.com.br), onde o administrador importa para a família. Liga-se com três propriedades do script (`SISTEMA_URL`, `SISTEMA_CHAVE_PUBLICA`, `SISTEMA_CHAVE`), geradas no próprio sistema. A chave nunca vai para o repositório. Os envios antigos vão com a função `enviarHistoricoAoSistema()`, rodada uma vez pelo editor.
 
 ## Para mudar
 

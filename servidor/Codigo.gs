@@ -20,6 +20,13 @@
  *
  * Para mudar o código depois: Implantar > Gerenciar implantações > editar > Nova versão.
  * Assim a URL continua a mesma.
+ *
+ * LIGAÇÃO COM O SISTEMA ÍNDIGO REI (sistema.indigorei.com.br):
+ *   Cada envio também vai, sem dados de saúde, para a caixa "Cadastros recebidos" do sistema.
+ *   No sistema, em Cadastros recebidos > Ligação com os formulários, gere a chave e crie em
+ *   Configurações do projeto > Propriedades do script: SISTEMA_URL, SISTEMA_CHAVE_PUBLICA e SISTEMA_CHAVE.
+ *   Depois rode enviarHistoricoAoSistema() uma vez para mandar os envios que já estão na planilha.
+ *   Sem essas propriedades o formulário funciona igual, só sem a cópia para o sistema.
  */
 
 const CONFIG = {
@@ -262,6 +269,7 @@ function registrar_(d) {
   }
 
   avisar_(envio, nomes, f, lista, planilha.getUrl());
+  enviarAoSistema_(envio, dadosParaSistema_(f, lista));
   return { ok: true, envio: envio, primeiroNome: f.respNome.split(/\s+/)[0] };
 }
 
@@ -465,6 +473,84 @@ function avisar_(envio, nomes, f, lista, urlPlanilha) {
   } catch (e) {
     // O aviso é cortesia: se falhar, o cadastro já foi gravado.
   }
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Sistema Índigo Rei                                                  */
+/* ------------------------------------------------------------------ */
+
+// Só dados de cadastro. Saúde, laudos e pastas nunca vão para o sistema.
+function dadosParaSistema_(f, lista) {
+  return {
+    respNome: f.respNome, respParentesco: f.respParentesco, respCpf: soDigitos_(f.respCpf), respRg: f.respRg,
+    respProfissao: f.respProfissao, respEstadoCivil: f.respEstadoCivil, respTelefone: soDigitos_(f.respTelefone),
+    respEmail: f.respEmail, cep: soDigitos_(f.cep), logradouro: f.logradouro, numero: f.numero,
+    complemento: f.complemento, bairro: f.bairro, cidade: f.cidade, uf: f.uf,
+    c2Nome: f.c2Nome, c2Parentesco: f.c2Parentesco, c2Telefone: soDigitos_(f.c2Telefone), c2Email: f.c2Email,
+    finQuem: f.finQuem, finNome: f.finNome, finCpf: soDigitos_(f.finCpf), finTelefone: soDigitos_(f.finTelefone),
+    finEmail: f.finEmail, autorizaImagem: f.autorizaImagem, consentimento: f.consentimento,
+    aprendizes: lista.map(function (a) {
+      return { nome: a.nome, nascimento: a.nascimento, naturalidade: a.naturalidade, escola: a.escola,
+               serie: a.serie, turno: a.turno, objetivos: a.objetivos };
+    })
+  };
+}
+
+// Entrega ao sistema. Nunca atrapalha o cadastro: se falhar, só registra no Diagnóstico.
+function enviarAoSistema_(envio, dados) {
+  const props = PropertiesService.getScriptProperties();
+  const url = props.getProperty('SISTEMA_URL');
+  const publica = props.getProperty('SISTEMA_CHAVE_PUBLICA');
+  const chave = props.getProperty('SISTEMA_CHAVE');
+  if (!url || !publica || !chave) return false;
+  try {
+    const resposta = UrlFetchApp.fetch(url.replace(/\/+$/, '') + '/rest/v1/rpc/cadastro_receber', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { apikey: publica },
+      payload: JSON.stringify({ p_chave: chave, p_tipo: 'familia', p_envio: envio, p_dados: dados }),
+      muteHttpExceptions: true
+    });
+    const codigo = resposta.getResponseCode();
+    if (codigo >= 300) {
+      registrarDiagnostico_({ evento: 'falha ao enviar ao sistema', tipo: 'sistema',
+        detalhe: 'HTTP ' + codigo + ' ' + resposta.getContentText().slice(0, 200) });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    registrarDiagnostico_({ evento: 'falha ao enviar ao sistema', tipo: 'sistema', detalhe: String(err && err.message || err) });
+    return false;
+  }
+}
+
+// Rodar uma vez pelo editor, depois de criar as propriedades: manda ao sistema os envios que já estão na planilha.
+// Pode rodar de novo sem problema: o sistema reconhece o mesmo envio pelo código e só atualiza.
+function enviarHistoricoAoSistema() {
+  const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('PLANILHA_ID'));
+  if (!planilha) throw new Error('Planilha não encontrada. Rode configurar() primeiro.');
+  const ler = function (nomeAba, colunas) {
+    const aba = planilha.getSheetByName(nomeAba);
+    if (!aba || aba.getLastRow() < 2) return [];
+    const valores = aba.getRange(2, 1, aba.getLastRow() - 1, colunas.length).getDisplayValues();
+    return valores.map(function (linha) {
+      const o = {};
+      colunas.forEach(function (c, i) { o[c[0]] = String(linha[i] || '').replace(/^'/, ''); });
+      return o;
+    });
+  };
+  const familias = ler('Famílias', COL_FAMILIAS);
+  const aprendizes = ler('Aprendizes', COL_APRENDIZES);
+  let ok = 0, falhas = 0;
+  familias.forEach(function (f) {
+    if (!f.envio) return;
+    const lista = aprendizes.filter(function (a) { return a.envio === f.envio; });
+    if (enviarAoSistema_(f.envio, dadosParaSistema_(f, lista))) ok++; else falhas++;
+  });
+  const resumo = 'Enviados ao sistema: ' + ok + '. Falhas: ' + falhas + (falhas ? ' (veja a aba Diagnóstico).' : '.');
+  Logger.log(resumo);
+  return resumo;
 }
 
 
