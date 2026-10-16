@@ -8,6 +8,16 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#062D56">
 <link rel="icon" href="simbolo.png">
+<link rel="apple-touch-icon" href="simbolo.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Índigo Rei">
+<meta property="og:title" content="Cadastro de Aprendizes | Índigo Rei">
+<meta property="og:description" content="Ficha de cadastro das famílias da Índigo Rei. Leva cerca de 10 minutos.">
+<meta property="og:url" content="https://cadastro.indigorei.com.br/">
+<meta property="og:image" content="https://cadastro.indigorei.com.br/compartilhar.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -84,12 +94,12 @@
     transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;appearance:none}
   textarea{resize:vertical;min-height:92px;line-height:1.5}
   input::placeholder,textarea::placeholder{color:#A39C8E}
-  input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 4px var(--gold-soft);background:#fff}
+  input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 4px var(--gold-soft);background-color:#fff}
   select{cursor:pointer;padding-right:40px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23062D56' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 15px center}
   .data3{display:grid;grid-template-columns:.8fr 1.4fr 1fr;gap:8px}
-  .campo.tem-erro input,.campo.tem-erro select,.campo.tem-erro textarea{border-color:#E3A29C;background:#FFF9F8}
+  .campo.tem-erro input,.campo.tem-erro select,.campo.tem-erro textarea{border-color:#E3A29C;background-color:#FFF9F8}
   .erro-msg{display:none;color:var(--erro);font-size:12.5px;margin-top:6px;align-items:center;gap:6px}
   .erro-msg svg{width:15px;height:15px;flex:none}
   .campo.tem-erro > .erro-msg{display:flex}
@@ -220,6 +230,33 @@
   @media (prefers-reduced-motion:reduce){
     *:active,*:active > span,*:active > .caixa{scale:none!important}
   }
+
+  /* celular: alvos de toque de 44px, data de nascimento sem corte, endereço com espaço */
+  .op span{min-height:44px}
+  .anexos-lista{grid-template-columns:minmax(0,1fr)}
+  .anexos-lista li{padding:2px 4px 2px 10px;min-width:0}
+  .anexos-lista button{min-height:44px;padding:0 10px}
+  .botao-remover{min-height:44px;margin:-10px -6px -10px 0}
+  .data3{grid-template-columns:4.25rem minmax(0,1fr) 5.25rem;gap:6px}
+  .data3 select{padding-left:9px;padding-right:22px;background-position:right 8px center}
+  @media (max-width:600px){
+    .grade-cep{grid-template-columns:minmax(0,1fr)}
+    .grade-cep > .campo{grid-column:auto}
+  }
+  .cep-aviso{font-size:12.5px;color:var(--navy);background:var(--gold-soft);border-radius:8px;padding:8px 10px;margin:8px 0 0}
+
+  /* foco visível pelo teclado */
+  .op input:focus-visible + span,.interruptor input:focus-visible + .trilho,.aceite input:focus-visible ~ .marca-box{outline:2px solid var(--navy);outline-offset:2px}
+  .anexos-zona:has(.anexos-input:focus-visible){border-color:var(--navy);background:#fff;outline:2px solid var(--navy);outline-offset:2px}
+
+  /* avisos */
+  .aviso-rascunho{background:var(--gold-soft);color:var(--navy);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 4px}
+  .erro-msg{flex-wrap:wrap;align-items:flex-start}
+  .erro-msg svg{margin-top:2px}
+  .erro-msg span{flex:1 1 calc(100% - 22px);min-width:0;overflow-wrap:anywhere}
+  .erro-acao{font:600 13px 'Poppins',sans-serif;color:var(--navy);background:#fff;border:1.5px solid var(--navy);border-radius:999px;
+    min-height:44px;padding:0 16px;margin-left:21px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:scale .16s cubic-bezier(.23,1,.32,1)}
+  .erro-acao:active{scale:.96}
 </style>
 </head>
 <body>
@@ -251,6 +288,7 @@
 
   <form id="form" novalidate autocomplete="on">
     <div class="pote" aria-hidden="true"><label>Deixe em branco <input type="text" name="zz_deixe_vazio" id="zzVazio" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore></label></div>
+    <p class="aviso-rascunho" id="avisoRascunho" role="status" hidden>Recuperamos o que você já tinha preenchido neste aparelho. Por segurança, CPF, RG, anexos e as duas confirmações finais não ficam guardados: preencha de novo, por favor.</p>
 
     <!-- 1. Aprendizes -->
     <section class="secao">
@@ -336,6 +374,7 @@
             <label class="rotulo" for="cep">CEP<span class="obrig">*</span></label>
             <input type="text" id="cep" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" data-mascara="cep">
             <span class="carregando-cep" id="cepStatus" hidden>buscando...</span>
+            <p class="cep-aviso" id="cepAviso" role="status" hidden>Não encontramos esse CEP. Confira os números ou preencha o endereço abaixo.</p>
             <div class="erro-msg"></div>
           </div>
           <div class="campo" data-campo="logradouro">
@@ -630,7 +669,7 @@
         <label class="anexos-zona">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6L15.2 8"/></svg>
           <span><strong>Anexar arquivos</strong><small>Toque para escolher do celular ou do computador</small></span>
-          <input type="file" class="anexos-input" multiple accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/*" aria-label="Anexar laudos">
+          <input type="file" class="anexos-input" multiple accept="application/pdf,image/jpeg,image/png,image/*" aria-label="Anexar laudos">
         </label>
         <ul class="anexos-lista"></ul>
         <div class="erro-msg"></div>
@@ -654,8 +693,10 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
   var ICONE_ERRO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>';
   var inicio = Date.now();
-  var VERSAO_PAGINA = '2';
+  var VERSAO_PAGINA = '3';
   var emEnvio = false;
+  var preparando = 0; // anexos ainda sendo preparados
+  var emailsMostrados = {}, emailsAvisados = {}; // e-mails com possível erro de digitação: aviso já mostrado / mantido pela família
 
   /* Diagnóstico de envio: só tipo do problema, tamanho e aparelho. Nenhum dado pessoal. */
   function aparelho() {
@@ -700,6 +741,51 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   function digitos(s) { return String(s || '').replace(/\D/g, ''); }
   function palavras(s) { return String(s || '').split(/\s+/).filter(Boolean).length; }
   function emailOk(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+
+  /* E-mail: erros de digitação comuns nos provedores grandes. Só sugere; se a família mantiver e enviar de novo, vale o que ela escreveu. */
+  var PROVEDOR_TROCADO = { gmial: 'gmail', gmai: 'gmail', gamil: 'gmail', gmal: 'gmail', gmeil: 'gmail', gmil: 'gmail', gnail: 'gmail',
+    gmaill: 'gmail', gmali: 'gmail', gmsil: 'gmail', gemail: 'gmail', hotmal: 'hotmail', hotmial: 'hotmail', hotmil: 'hotmail',
+    hotnail: 'hotmail', hotamil: 'hotmail', homail: 'hotmail', hotmai: 'hotmail', hormail: 'hotmail', hotmaill: 'hotmail',
+    outlok: 'outlook', outloo: 'outlook', outllook: 'outlook', oulook: 'outlook', otlook: 'outlook', iclod: 'icloud', icoud: 'icloud',
+    iclould: 'icloud', yaho: 'yahoo', yahho: 'yahoo' };
+  var PROVEDORES = ['gmail', 'hotmail', 'outlook', 'icloud', 'yahoo', 'live', 'uol', 'bol', 'terra'];
+  var FINAL_TROCADO = ['con', 'cm', 'co', 'om', 'comm', 'cpm', 'vom', 'xom', 'cim', 'coom', 'cmo', 'ocm', 'c', 'cok', 'col'];
+  function sugestaoEmail(s) {
+    s = String(s || '').trim();
+    var partes = s.split('@');
+    if (partes.length !== 2 || !partes[0] || /\s/.test(s)) return '';
+    var dominio = partes[1].toLowerCase(), limpo = dominio.replace(/[.,]+$/, '');
+    var m = limpo.match(/^([a-z0-9-]+)\.([a-z.]+)$/);
+    if (!m) return limpo !== dominio && emailOk(partes[0] + '@' + limpo) ? partes[0] + '@' + limpo : '';
+    var nome = m[1], fim = m[2];
+    var provedor = PROVEDOR_TROCADO[nome] || (PROVEDORES.indexOf(nome) >= 0 ? nome : '');
+    if (!provedor) return limpo !== dominio ? partes[0] + '@' + limpo : '';
+    var brasileiro = /^(uol|bol|terra)$/.test(provedor);
+    if (FINAL_TROCADO.indexOf(fim) >= 0) fim = brasileiro ? 'com.br' : 'com';
+    else if (/^(con|cm|co|cpm|vom|xom|om)\.br$/.test(fim) || /^com\.(b|vr|bt|bbr|brr|nr)$/.test(fim)) fim = 'com.br';
+    var novo = provedor + '.' + fim;
+    return novo !== dominio ? partes[0] + '@' + novo : '';
+  }
+  function mensagemEmail(s, obrigatorio) {
+    s = String(s || '').trim();
+    if (!s) return obrigatorio ? 'Informe o e-mail.' : '';
+    if (/\s/.test(s)) return 'Tire os espaços do e-mail.';
+    var arrobas = (s.match(/@/g) || []).length;
+    if (!arrobas) return 'Falta o @ no e-mail.';
+    if (arrobas > 1) return 'O e-mail tem mais de um @. Confira.';
+    var dominio = s.split('@')[1];
+    if (/,/.test(dominio)) return 'Troque a vírgula por ponto no e-mail.';
+    if (dominio.indexOf('.') < 0) return 'Falta o final do e-mail, como .com ou .com.br.';
+    return 'Confira o e-mail.';
+  }
+  // Regra de e-mail no formato das demais: [campo, ok, mensagem]
+  function regraEmail(campo, valorEmail, obrigatorio) {
+    if (!valorEmail) return [campo, !obrigatorio, mensagemEmail('', true)];
+    if (!emailOk(valorEmail)) return [campo, false, mensagemEmail(valorEmail, obrigatorio)];
+    var sug = sugestaoEmail(valorEmail);
+    if (!sug || emailsAvisados[valorEmail]) return [campo, true, ''];
+    return [campo, false, { texto: 'Confira o final do e-mail: você quis dizer ' + sug + '? Se estiver certo, é só enviar de novo.', sugestao: sug, id: campo, avisoEmail: valorEmail }];
+  }
   function cpfOk(c) {
     c = digitos(c);
     if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
@@ -742,13 +828,16 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   var ultimoCep = '';
   el('cep').addEventListener('input', function () {
     var c = digitos(el('cep').value);
-    if (c.length !== 8 || c === ultimoCep) return;
+    if (c.length !== 8) { el('cepAviso').hidden = true; return; }
+    if (c === ultimoCep) return;
     ultimoCep = c;
+    el('cepAviso').hidden = true;
     el('cepStatus').hidden = false;
     fetch('https://viacep.com.br/ws/' + c + '/json/', { credentials: 'omit' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (!d || d.erro) return;
+        if (c !== ultimoCep) return;
+        if (!d || d.erro) { el('cepAviso').hidden = false; return; }
         if (d.logradouro) el('logradouro').value = d.logradouro;
         if (d.bairro) el('bairro').value = d.bairro;
         if (d.localidade) el('cidade').value = d.localidade;
@@ -810,6 +899,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     var frag = tpl.content.cloneNode(true);
     var card = frag.querySelector('.aprendiz');
     preencherDatas(card);
+    nomearGrupos(card);
     anexos.set(card, []);
     var input = q(card, '.anexos-input');
     input.addEventListener('change', function () { receberArquivos(card, input.files); input.value = ''; });
@@ -856,7 +946,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
         var b64 = dataUrl.split(',')[1];
         ok({ base64: b64, tipo: 'image/jpeg', bytes: Math.round(b64.length * 0.75), nome: arquivo.name.replace(/\.[^.]+$/, '') + '.jpg' });
       };
-      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir a imagem "' + arquivo.name + '". Se for do iPhone, envie em JPG ou PDF.')); };
+      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não conseguimos abrir "' + arquivo.name + '". Envie em PDF ou JPG, ou anexe um print da tela com a imagem aberta.')); };
       img.src = url;
     });
   }
@@ -888,8 +978,10 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     var novos = Array.prototype.slice.call(files || []);
     if (atuais.length + novos.length > MAX_ARQS) { mostrarErro(campo, 'No máximo ' + MAX_ARQS + ' arquivos por aprendiz.'); novos = novos.slice(0, MAX_ARQS - atuais.length); }
     var zona = q(card, '.anexos-zona strong'); zona.textContent = 'Preparando...';
+    preparando++;
     Promise.all(novos.map(function (f) { return prepararArquivo(f).then(function (x) { return { ok: x }; }, function (e) { return { erro: e.message }; }); }))
       .then(function (res) {
+        preparando = Math.max(0, preparando - 1);
         var erros = [];
         res.forEach(function (r) {
           if (r.erro) { erros.push(r.erro); return; }
@@ -903,13 +995,47 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   }
 
   /* ---------- validação ---------- */
+  var seqErro = 0;
   function mostrarErro(campo, msg) {
     if (!campo) return;
     var m = campo.querySelector(':scope > .erro-msg');
     if (!m) return;
+    if (!m.id) m.id = 'erro-' + (++seqErro);
+    var texto = msg && typeof msg === 'object' ? msg.texto : msg;
+    // mesma mensagem: não refaz (refazer no meio de um toque faria o botão Corrigir perder o clique)
+    var chave = texto ? texto + '|' + (msg.sugestao || '') : '';
+    if (m.getAttribute('data-msg') === chave) { campo.classList.toggle('tem-erro', !!texto); return; }
+    m.setAttribute('data-msg', chave);
     m.innerHTML = '';
-    if (msg) { m.innerHTML = ICONE_ERRO; var s = document.createElement('span'); s.textContent = msg; m.appendChild(s); }
-    campo.classList.toggle('tem-erro', !!msg);
+    if (texto) {
+      m.innerHTML = ICONE_ERRO;
+      var s = document.createElement('span'); s.textContent = texto; m.appendChild(s);
+      if (msg.sugestao) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'erro-acao'; b.textContent = 'Corrigir';
+        b.setAttribute('aria-label', 'Corrigir para ' + msg.sugestao);
+        b.addEventListener('click', function () {
+          var i = el(msg.id); if (!i) return;
+          i.value = msg.sugestao;
+          i.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        m.appendChild(b);
+      }
+    }
+    campo.classList.toggle('tem-erro', !!texto);
+    // leitores de tela: o campo diz que tem erro e lê a mensagem
+    qa(campo, 'input:not([type=radio]):not([type=checkbox]):not([type=file]), select, textarea, .opcoes').forEach(function (x) {
+      if (texto) { x.setAttribute('aria-invalid', 'true'); x.setAttribute('aria-describedby', m.id); }
+      else { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby'); }
+    });
+  }
+  // Grupos de opções com nome, para leitores de tela
+  function nomearGrupos(raiz) {
+    qa(raiz, '.opcoes').forEach(function (g) {
+      var c = g.closest('.campo'), r = c && c.querySelector('.rotulo');
+      g.setAttribute('role', 'radiogroup');
+      if (r) g.setAttribute('aria-label', r.textContent.replace(/\*/g, '').trim());
+    });
   }
   function dataAprendiz(c) {
     var d = valor(c, '[data-k="nascDia"]'), m = valor(c, '[data-k="nascMes"]'), a = valor(c, '[data-k="nascAno"]');
@@ -944,7 +1070,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       ['respRg', v('respRg').length >= 4, 'Informe o RG.'],
       ['respEstadoCivil', !!v('respEstadoCivil'), 'Escolha uma opção.'],
       ['respTelefone', digitos(v('respTelefone')).length >= 10, 'Informe o WhatsApp com DDD.'],
-      ['respEmail', emailOk(v('respEmail')), 'Confira o e-mail.'],
+      regraEmail('respEmail', v('respEmail'), true),
       ['cep', digitos(v('cep')).length === 8, 'Informe o CEP.'],
       ['logradouro', !!v('logradouro'), 'Informe o endereço.'],
       ['numero', !!v('numero'), 'Informe o número ou S/N.'],
@@ -959,14 +1085,14 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       regras.push(['c2Nome', palavras(v('c2Nome')) >= 2, 'Escreva nome e sobrenome.']);
       regras.push(['c2Parentesco', !!parent2 && (parent2 !== 'Outro' || !!v('c2ParentescoOutro')), parent2 === 'Outro' ? 'Diga qual é o parentesco.' : 'Escolha uma opção.']);
       regras.push(['c2Telefone', digitos(v('c2Telefone')).length >= 10, 'Informe o WhatsApp com DDD.']);
-      regras.push(['c2Email', !v('c2Email') || emailOk(v('c2Email')), 'Confira o e-mail.']);
+      regras.push(regraEmail('c2Email', v('c2Email'), false));
     }
     if (fin === 'Segundo contato') regras.push(['finCpfSegundo', cpfOk(v('finCpfSegundo')), 'Informe um CPF válido.']);
     if (fin === 'Outra pessoa') {
       regras.push(['finNome', palavras(v('finNome')) >= 2, 'Escreva nome e sobrenome.']);
       regras.push(['finCpf', cpfOk(v('finCpf')), 'Informe um CPF válido.']);
       regras.push(['finTelefone', digitos(v('finTelefone')).length >= 10, 'Informe o WhatsApp com DDD.']);
-      regras.push(['finEmail', emailOk(v('finEmail')), 'Confira o e-mail.']);
+      regras.push(regraEmail('finEmail', v('finEmail'), true));
     }
     return regras;
   }
@@ -1047,6 +1173,11 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       else if (x.type === 'checkbox') x.checked = !!fam[k];
       else x.value = fam[k];
     });
+    // Avisa que o rascunho voltou e o que precisa ser preenchido de novo
+    var algo = [fam].concat(r.aprendizes || []).some(function (o) {
+      return Object.keys(o || {}).some(function (k) { return o[k] === true || (typeof o[k] === 'string' && o[k].trim() !== ''); });
+    });
+    el('avisoRascunho').hidden = !algo;
   }
   function limparRascunho() { try { window.localStorage.removeItem(CHAVE); } catch (e) {} }
 
@@ -1092,7 +1223,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       declaracao: el('declaracao').checked
     };
   }
-  var NOTA_PADRAO = null;
+  var NOTA_PADRAO = null, avisosEnvio = [];
   function enviando(sim, texto) {
     var b = el('enviar'), nota = el('envioNota');
     if (NOTA_PADRAO === null) NOTA_PADRAO = nota.textContent;
@@ -1101,16 +1232,26 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     el('enviarTexto').textContent = sim ? (texto || 'Enviando...') : 'Enviar cadastro';
     nota.textContent = sim ? 'Não feche esta página até aparecer a confirmação.' : NOTA_PADRAO;
     nota.classList.toggle('atencao', sim);
+    // Envio demorado: avisa que continua, sem nunca cancelar (cancelar poderia duplicar o cadastro)
+    avisosEnvio.forEach(clearTimeout); avisosEnvio = [];
+    if (sim) {
+      avisosEnvio.push(setTimeout(function () { if (emEnvio) nota.textContent = 'Ainda enviando. Pode levar até um minuto. Mantenha esta página aberta.'; }, 15000));
+      avisosEnvio.push(setTimeout(function () { if (emEnvio) nota.textContent = 'Está demorando mais que o normal, mas o envio continua. Mantenha esta página aberta.'; }, 60000));
+    }
   }
   function alerta(msg) { var a = el('alerta'); a.textContent = msg || ''; a.classList.toggle('visivel', !!msg); }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     alerta('');
+    if (preparando > 0) { alerta('Espere os arquivos terminarem de carregar e toque em Enviar cadastro de novo.'); return; }
+    // e-mail com possível erro de digitação: a família vê o aviso num envio; se enviar de novo sem mudar, vale o que escreveu
+    Object.keys(emailsMostrados).forEach(function (k) { emailsAvisados[k] = true; });
     tentouEnviar = true;
     var erros = validar();
+    regrasFamilia().forEach(function (r) { if (!r[1] && r[2] && r[2].avisoEmail) emailsMostrados[r[2].avisoEmail] = true; });
     if (erros.length) {
-      alerta(erros.length === 1 ? 'Falta 1 resposta. Ela está marcada em vermelho acima.' : 'Faltam ' + erros.length + ' respostas. Elas estão marcadas em vermelho acima.');
+      alerta(erros.length === 1 ? 'Confira 1 resposta, marcada em vermelho acima.' : 'Confira ' + erros.length + ' respostas, marcadas em vermelho acima.');
       diagnostico('respostas faltando', 'validacao', erros.map(function (c) {
         return (c && c.getAttribute('data-campo')) || '?';
       }).join(', '));
@@ -1158,10 +1299,35 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
       });
   });
 
+  /* ---------- tecla Enter / "Ir" do celular: vai para o próximo campo, não envia ---------- */
+  function ehTexto(x) { return x.tagName === 'TEXTAREA' || (x.tagName === 'INPUT' && /^(text|email|tel|number|search|url)$/.test(x.type)); }
+  function proximoControle(atual) {
+    var lista = qa(form, 'input, select, textarea').filter(function (x) {
+      return x === atual || (x.type !== 'hidden' && !x.disabled && x.tabIndex >= 0 && x.offsetParent !== null);
+    });
+    var i = lista.indexOf(atual);
+    return i >= 0 ? lista[i + 1] || null : null;
+  }
+  function dicaEnter(x) {
+    var p = proximoControle(x);
+    x.setAttribute('enterkeyhint', p && ehTexto(p) ? 'next' : 'done');
+  }
+  form.addEventListener('focusin', function (e) { if (e.target.tagName === 'INPUT' && ehTexto(e.target)) dicaEnter(e.target); });
+  form.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
+    var t = e.target;
+    if (t.tagName !== 'INPUT' || !ehTexto(t)) return;
+    e.preventDefault();
+    var p = proximoControle(t);
+    if (p && ehTexto(p)) p.focus(); else t.blur();
+  });
+
   /* ---------- início ---------- */
   restaurar();
+  nomearGrupos(form);
   atualizarFamilia();
   validar();
+  qa(form, 'input').forEach(function (x) { if (ehTexto(x)) x.setAttribute('enterkeyhint', 'next'); });
   // Acorda o servidor enquanto a família preenche, para o envio ser rápido.
   if (/^https:\/\/script\.google\.com\//.test(URL_SERVIDOR)) {
     try { fetch(URL_SERVIDOR, { credentials: 'omit' }).catch(function () {}); } catch (e) {}
