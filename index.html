@@ -23,9 +23,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#062D56; --gold:#C89C36; --gold-2:#B0862A; --gold-soft:#F5EBD3;
+    --navy:#062D56; --gold:#E7A14A; /* riqueza, paleta do manual */ --gold-2:#B9772A; --gold-soft:#FBEBD6;
     --rose:#C38696; --teal:#448493;
-    --bg:#F4F1EA; --card:#FFFFFF; --ink:#18212E; --muted:#5E6876; --line:#E2DCCF; --field:#FBFAF6;
+    --bg:#E2E2E2; --card:#FFFFFF; --ink:#18212E; --muted:#5E6876; --line:#D9D9D9; --field:#F7F7F7;
     --erro:#B3261E; --erro-soft:#FCEDEC; --ok:#2E7D5B; --raio:16px;
   }
   *{box-sizing:border-box}
@@ -37,7 +37,7 @@
   .progresso{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(6,45,86,.15);z-index:20}
   .progresso-barra{height:100%;width:0;background:var(--gold);transition:width .35s ease}
   .faixa{position:absolute;top:0;left:0;right:0;height:260px;background-color:var(--navy);
-    background-image:radial-gradient(circle at 88% 18%,rgba(200,156,54,.38),transparent 42%),
+    background-image:radial-gradient(circle at 88% 18%,rgba(231,161,74,.34),transparent 42%),
                      radial-gradient(circle at 8% 100%,rgba(68,132,147,.40),transparent 45%);z-index:0}
   .coluna{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:44px 16px 56px}
   .cartao{background:var(--card);border:1px solid var(--line);border-radius:var(--raio);padding:22px 24px;margin-bottom:12px;
@@ -45,7 +45,7 @@
 
   /* Capa */
   .cartao.capa{padding:0;overflow:hidden;border:0;box-shadow:0 14px 34px rgba(6,45,86,.20);margin-bottom:22px}
-  .capa-topo{height:8px;background:linear-gradient(90deg,var(--gold),#E4C67C 50%,var(--gold))}
+  .capa-topo{height:8px;background:linear-gradient(90deg,var(--gold),#F2C48A 50%,var(--gold))}
   .capa-corpo{padding:28px 28px 24px}
   .logo{display:block;max-width:300px;max-height:92px;width:auto;height:auto;margin:0 0 20px}
   .marca{font-weight:700;font-size:22px;color:var(--navy);margin:0 0 18px;letter-spacing:.02em}
@@ -93,7 +93,7 @@
     background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;outline:none;
     transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;appearance:none}
   textarea{resize:vertical;min-height:92px;line-height:1.5}
-  input::placeholder,textarea::placeholder{color:#A39C8E}
+  input::placeholder,textarea::placeholder{color:#9B9B9B}
   input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 4px var(--gold-soft);background-color:#fff}
   select{cursor:pointer;padding-right:40px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23062D56' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -111,7 +111,7 @@
   .op input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
   .op span{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1.5px solid var(--line);border-radius:999px;
     background:var(--field);font-size:14px;line-height:1.3;transition:background .15s,border-color .15s,color .15s;user-select:none}
-  .op span::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid #B9B2A3;flex:none;transition:all .15s}
+  .op span::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid #ADADAD;flex:none;transition:all .15s}
   .op input:checked + span{background:var(--navy);border-color:var(--navy);color:#fff}
   .op input:checked + span::before{border-color:var(--gold);background:var(--gold);box-shadow:inset 0 0 0 3px var(--navy)}
   .op input:focus-visible + span{box-shadow:0 0 0 4px var(--gold-soft)}
@@ -119,7 +119,7 @@
   .revela{margin-top:12px;padding-left:14px;border-left:3px solid var(--gold-soft)}
 
   /* Anexos */
-  .anexos-zona{display:flex;gap:14px;align-items:center;border:1.5px dashed #CFC6B3;border-radius:14px;padding:14px 16px;
+  .anexos-zona{display:flex;gap:14px;align-items:center;border:1.5px dashed #C4C4C4;border-radius:14px;padding:14px 16px;
     background:var(--field);cursor:pointer;transition:border-color .15s,background .15s}
   .anexos-zona svg{width:30px;height:30px;color:var(--teal);flex:none}
   .anexos-zona strong{display:block;color:var(--navy);font-weight:600;font-size:14.5px}
@@ -147,7 +147,7 @@
   /* Interruptor */
   .interruptor{display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
   .interruptor input{position:absolute;opacity:0;width:1px;height:1px}
-  .trilho{width:46px;height:26px;border-radius:999px;background:#D7D0C2;position:relative;flex:none;transition:background .2s}
+  .trilho{width:46px;height:26px;border-radius:999px;background:#CCCCCC;position:relative;flex:none;transition:background .2s}
   .trilho::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;
     box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
   .interruptor input:checked + .trilho{background:var(--navy)}
@@ -161,7 +161,7 @@
     background:var(--field);cursor:pointer;transition:all .15s;position:relative}
   .aceite + .aceite{margin-top:10px}
   .aceite input{position:absolute;opacity:0;width:1px;height:1px}
-  .aceite .marca-box{width:22px;height:22px;border-radius:6px;border:2px solid #B9B2A3;flex:none;margin-top:2px;transition:all .15s;
+  .aceite .marca-box{width:22px;height:22px;border-radius:6px;border:2px solid #ADADAD;flex:none;margin-top:2px;transition:all .15s;
     background-position:center;background-repeat:no-repeat;background-size:14px}
   .aceite input:checked ~ .marca-box{border-color:var(--navy);background-color:var(--navy);
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3.5 3.5L11 1.5' fill='none' stroke='%23C89C36' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
@@ -177,7 +177,7 @@
     font-size:14px;margin-bottom:14px}
   .alerta.visivel{display:block}
   .enviar{width:100%;max-width:360px;padding:16px 20px;border:0;border-radius:12px;background:var(--gold);color:var(--navy);
-    font:600 16px 'Poppins',sans-serif;cursor:pointer;box-shadow:0 8px 20px rgba(200,156,54,.35);transition:transform .1s,background .15s;
+    font:600 16px 'Poppins',sans-serif;cursor:pointer;box-shadow:0 8px 20px rgba(231,161,74,.35);transition:transform .1s,background .15s;
     display:inline-flex;align-items:center;justify-content:center;gap:10px}
   .enviar:disabled{opacity:.75;cursor:wait}
   .giro{width:18px;height:18px;border:2.5px solid rgba(6,45,86,.25);border-top-color:var(--navy);border-radius:50%;
@@ -222,10 +222,10 @@
   .aceite:active{scale:.99}
   .anexos-zona.arrastando{border-color:var(--navy);background:#fff}
   @media (hover:hover) and (pointer:fine){
-    .op:hover span{border-color:#C7BEAA}
+    .op:hover span{border-color:#BDBDBD}
     .anexos-zona:hover,.anexos-zona.arrastando{border-color:var(--navy);background:#fff}
     .adicionar:hover{background:#fff}
-    .enviar:hover{background:#D4A940}
+    .enviar:hover{background:#EDB066}
   }
   @media (prefers-reduced-motion:reduce){
     *:active,*:active > span,*:active > .caixa{scale:none!important}
