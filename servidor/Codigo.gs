@@ -228,44 +228,60 @@ function registrar_(d) {
   const agora = new Date();
   const envio = 'F' + Utilities.formatDate(agora, CONFIG.FUSO, 'yyMMdd-HHmmss') + '-' + Math.random().toString(36).slice(2, 5).toUpperCase();
 
-  // Laudos: uma subpasta por aprendiz, dentro da pasta restrita.
-  lista.forEach(function (a) {
-    a.links = [];
-    a.pasta = '';
-    if (!a.arquivos.length) return;
-    const sub = restrita.createFolder(nomeArquivo_(a.nome) + ' (' + envio + ')');
-    a.pasta = sub.getUrl();
-    a.arquivos.forEach(function (arq, i) {
-      const blob = Utilities.newBlob(arq.bytes, arq.tipo, nomeArquivo_(arq.nome) || ('laudo-' + (i + 1)));
-      a.links.push(sub.createFile(blob).getUrl());
-    });
-  });
-
   const nomes = lista.map(function (a) { return a.nome; }).join(', ');
   const linhaFamilia = Object.assign({}, f, { dataHora: agora, envio: envio, aprendizes: nomes });
 
-  const trava = LockService.getScriptLock();
-  trava.waitLock(30000);
+  // Laudos: uma subpasta por aprendiz, dentro da pasta restrita. Se qualquer passo
+  // até a gravação da aba Saúde falhar, as subpastas deste envio vão para a lixeira:
+  // nenhum laudo fica guardado sem a linha da aba Saúde que aponta para ele.
+  const criadas = [];
   try {
-    gravar_(planilha.getSheetByName('Famílias'), COL_FAMILIAS, [linhaFamilia]);
-    gravar_(planilha.getSheetByName('Aprendizes'), COL_APRENDIZES, lista.map(function (a) {
-      return {
-        dataHora: agora, envio: envio, nome: a.nome, nascimento: a.nascimento, naturalidade: a.naturalidade,
-        escola: a.escola, serie: a.serie, turno: a.turno, objetivos: a.objetivos,
-        respNome: f.respNome, respTelefone: f.respTelefone, finNome: f.finNome
-      };
-    }));
-    gravar_(saude.getSheetByName('Saúde'), COL_SAUDE, lista.map(function (a) {
-      return {
-        dataHora: agora, envio: envio, nome: a.nome, nascimento: a.nascimento,
-        preocupacao: a.preocupacao, preocupacaoDetalhe: a.preocupacaoDetalhe,
-        diagnostico: a.diagnostico, diagnosticoQual: a.diagnosticoQual,
-        historico: a.historico, historicoDetalhe: a.historicoDetalhe,
-        laudos: a.links.length ? a.links.join('\n') : '', pastaLaudos: a.pasta
-      };
-    }));
-  } finally {
-    trava.releaseLock();
+    lista.forEach(function (a) {
+      a.links = [];
+      a.pasta = '';
+      if (!a.arquivos.length) return;
+      const sub = restrita.createFolder(nomeArquivo_(a.nome) + ' (' + envio + ')');
+      criadas.push(sub);
+      a.pasta = sub.getUrl();
+      a.arquivos.forEach(function (arq, i) {
+        const blob = Utilities.newBlob(arq.bytes, arq.tipo, nomeArquivo_(arq.nome) || ('laudo-' + (i + 1)));
+        a.links.push(sub.createFile(blob).getUrl());
+      });
+    });
+
+    const trava = LockService.getScriptLock();
+    trava.waitLock(30000);
+    try {
+      gravar_(planilha.getSheetByName('Famílias'), COL_FAMILIAS, [linhaFamilia]);
+      gravar_(planilha.getSheetByName('Aprendizes'), COL_APRENDIZES, lista.map(function (a) {
+        return {
+          dataHora: agora, envio: envio, nome: a.nome, nascimento: a.nascimento, naturalidade: a.naturalidade,
+          escola: a.escola, serie: a.serie, turno: a.turno, objetivos: a.objetivos,
+          respNome: f.respNome, respTelefone: f.respTelefone, finNome: f.finNome
+        };
+      }));
+      // A aba Saúde é a última: se ela foi gravada, o envio inteiro foi gravado.
+      gravar_(saude.getSheetByName('Saúde'), COL_SAUDE, lista.map(function (a) {
+        return {
+          dataHora: agora, envio: envio, nome: a.nome, nascimento: a.nascimento,
+          preocupacao: a.preocupacao, preocupacaoDetalhe: a.preocupacaoDetalhe,
+          diagnostico: a.diagnostico, diagnosticoQual: a.diagnosticoQual,
+          historico: a.historico, historicoDetalhe: a.historicoDetalhe,
+          laudos: a.links.length ? a.links.join('\n') : '', pastaLaudos: a.pasta
+        };
+      }));
+    } finally {
+      trava.releaseLock();
+    }
+  } catch (err) {
+    criadas.forEach(function (sub) {
+      try { sub.setTrashed(true); }
+      catch (e) {
+        registrarDiagnostico_({ evento: 'laudo de envio recusado não foi para a lixeira', tipo: 'servidor',
+          detalhe: 'Remover à mão a pasta ' + sub.getId() + ' da pasta restrita.' });
+      }
+    });
+    throw err;
   }
 
   avisar_(envio, nomes, f, lista, planilha.getUrl());
@@ -457,7 +473,7 @@ function avisar_(envio, nomes, f, lista, urlPlanilha) {
     const anexos = lista.reduce(function (s, a) { return s + a.links.length; }, 0);
     MailApp.sendEmail({
       to: CONFIG.AVISO_EMAIL,
-      subject: 'Novo cadastro: ' + nomes,
+      subject: ('Novo cadastro: ' + nomes).replace(/[\r\n]+/g, ' '),
       body: [
         'Chegou um cadastro novo pelo formulário das famílias.',
         '',
@@ -515,18 +531,18 @@ function enviarAoSistema_(envio, dados) {
     const codigo = resposta.getResponseCode();
     if (codigo >= 300) {
       registrarDiagnostico_({ evento: 'falha ao enviar ao sistema', tipo: 'sistema',
-        detalhe: 'HTTP ' + codigo + ' ' + resposta.getContentText().slice(0, 200) });
+        detalhe: envio + ': HTTP ' + codigo + ' ' + resposta.getContentText().slice(0, 200) });
       return false;
     }
     return true;
   } catch (err) {
-    registrarDiagnostico_({ evento: 'falha ao enviar ao sistema', tipo: 'sistema', detalhe: String(err && err.message || err) });
+    registrarDiagnostico_({ evento: 'falha ao enviar ao sistema', tipo: 'sistema', detalhe: envio + ': ' + String(err && err.message || err) });
     return false;
   }
 }
 
 // Rodar uma vez pelo editor, depois de criar as propriedades: manda ao sistema os envios que já estão na planilha.
-// Pode rodar de novo sem problema: o sistema reconhece o mesmo envio pelo código e só atualiza.
+// Pode rodar de novo: envio igual que o sistema já importou ou descartou não muda nada lá (sistema, 21/10/2026).
 function enviarHistoricoAoSistema() {
   const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('PLANILHA_ID'));
   if (!planilha) throw new Error('Planilha não encontrada. Rode configurar() primeiro.');

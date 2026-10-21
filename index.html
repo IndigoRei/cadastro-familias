@@ -288,7 +288,7 @@
 
   <form id="form" novalidate autocomplete="on">
     <div class="pote" aria-hidden="true"><label>Deixe em branco <input type="text" name="zz_deixe_vazio" id="zzVazio" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore data-bwignore></label></div>
-    <p class="aviso-rascunho" id="avisoRascunho" role="status" hidden>Recuperamos o que você já tinha preenchido neste aparelho. Por segurança, CPF, RG, anexos e as duas confirmações finais não ficam guardados: preencha de novo, por favor.</p>
+    <p class="aviso-rascunho" id="avisoRascunho" role="status" hidden>Recuperamos o que você já tinha preenchido neste aparelho nos últimos 3 dias. Por segurança, CPF, RG, respostas de saúde, anexos e as duas confirmações finais não ficam guardados: preencha de novo, por favor. <button type="button" class="botao-sec" id="apagarRascunho">Apagar o que foi preenchido neste aparelho</button></p>
 
     <!-- 1. Aprendizes -->
     <section class="secao">
@@ -1120,8 +1120,10 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   });
   form.addEventListener('input', function () { validar(); salvar(); });
 
-  /* ---------- rascunho (sem CPF, RG, anexos e autorizações) ---------- */
-  var NAO_SALVAR = ['respCpf', 'respRg', 'finCpf', 'finCpfSegundo', 'consentimento', 'declaracao', 'zz_deixe_vazio'];
+  /* ---------- rascunho (sem CPF, RG, saúde, anexos e autorizações; vale 3 dias) ---------- */
+  var NAO_SALVAR = ['respCpf', 'respRg', 'finCpf', 'finCpfSegundo', 'consentimento', 'declaracao', 'zz_deixe_vazio',
+    'preocupacao', 'preocupacaoDetalhe', 'diagnostico', 'diagnosticoQual', 'historico', 'historicoDetalhe'];
+  var VALIDADE_RASCUNHO_MS = 3 * 24 * 60 * 60 * 1000;
   function dadosCampos(raiz, attr, pularAprendizes) {
     var d = {};
     qa(raiz, 'input, select, textarea').forEach(function (x) {
@@ -1149,6 +1151,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     if (enviado) return;
     try {
       var rascunho = {
+        salvoEm: Date.now(),
         familia: dadosCampos(form, 'name', true),
         aprendizes: cards().map(function (c) { return dadosCampos(c, 'data-k'); })
       };
@@ -1161,6 +1164,8 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   function restaurar() {
     var r = null;
     try { r = JSON.parse(window.localStorage.getItem(CHAVE) || 'null'); } catch (e) {}
+    // Rascunho sem data (os que já estão nos aparelhos, com respostas de saúde) ou vencido é apagado sem ser mostrado.
+    if (r && !(typeof r.salvoEm === 'number' && Date.now() - r.salvoEm < VALIDADE_RASCUNHO_MS)) { limparRascunho(); r = null; }
     var qtd = r && Array.isArray(r.aprendizes) && r.aprendizes.length ? Math.min(r.aprendizes.length, MAX_APRENDIZES) : 1;
     for (var i = 0; i < qtd; i++) novoAprendiz(false);
     if (!r) return;
@@ -1180,6 +1185,14 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     el('avisoRascunho').hidden = !algo;
   }
   function limparRascunho() { try { window.localStorage.removeItem(CHAVE); } catch (e) {} }
+  el('apagarRascunho').addEventListener('click', function () {
+    // Para o salvamento automático antes; senão o pagehide do recarregamento grava tudo de novo.
+    clearTimeout(timerSalvar);
+    enviado = true;
+    limparRascunho();
+    form.reset();
+    window.location.reload();
+  });
 
   /* ---------- envio ---------- */
   function coletar() {
