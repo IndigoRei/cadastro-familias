@@ -126,6 +126,7 @@ function doGet(e) {
   // Sem parâmetros: a página "acorda" o servidor antes do envio.
   // Com ?evento=...: a página registra uma tentativa ou falha de envio (sem dados pessoais).
   const p = (e && e.parameter) || {};
+  if (p.clube === 'vagas') return json_(clubeVagas_()); // Clube de Férias (Clube.gs)
   if (p.evento) registrarDiagnostico_(p);
   return json_({ ok: true, servico: 'cadastro-familias' });
 }
@@ -133,6 +134,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const dados = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (dados.tipo === 'clube') return json_(clubeInscrever_(dados)); // Clube de Férias (Clube.gs)
     return json_(registrar_(dados));
   } catch (err) {
     const msg = String(err && err.message ? err.message : err);
