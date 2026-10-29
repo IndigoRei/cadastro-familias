@@ -1,77 +1,26 @@
 /**
- * CLUBE DE FÉRIAS DE DEZEMBRO (servidor), na mesma implantação do cadastro das famílias.
- * A página fica em cadastro.indigorei.com.br/clube e manda as inscrições para cá.
+ * CLUBE DE FÉRIAS: ALERGIAS (servidor), na mesma implantação do cadastro das famílias.
  *
- * Grava:
- *   Planilha "Clube de Férias dezembro 2026 (inscrições)", na pasta do cadastro: uma linha por criança.
- *     A coluna Situação é sua: Aguardando Pix, Confirmado, Cancelado ou Contraturno: conferir.
- *     Cancelado libera a vaga na hora.
- *   Planilha "Clube de Férias dezembro 2026 (alergias)", na pasta restrita: alergias e restrições.
- *     Dado de saúde: nunca vai para o sistema nem para o e-mail de aviso.
+ * Desde 29/10/2026 a inscrição no Clube é feita no sistema (sistema.indigorei.com.br/clube e a área da família;
+ * planta do sistema, seção 3.5, "Inscrição pelo sistema"): vagas, Pix e confirmação do pagamento ficam lá. Aqui fica
+ * só o que é dado de saúde e não entra no sistema: as alergias e restrições alimentares, numa planilha da pasta
+ * restrita ("Clube de Férias dezembro 2026 (alergias)").
  *
- * PRIMEIRA VEZ (no editor do Apps Script do cadastro das famílias):
- *   1. Arquivo + > Script, com o nome Clube, e colar este código. Trocar também o Codigo.gs pela versão nova.
- *   2. Rodar configurarClube() e autorizar.
- *   3. Configurações do projeto > Propriedades do script: criar PIX_CHAVE com o CNPJ só com os números.
- *   4. Implantar > Gerenciar implantações > editar > Nova versão. A URL continua a mesma.
+ * A página manda as alergias com a referência da inscrição. Antes de gravar, este servidor confere no sistema que a
+ * inscrição existe, é recente (2 horas) e tem estas crianças (função clube_referencia_recente, com a chave pública do
+ * sistema já usada no cadastro). Nenhum outro dado vem para cá, e nada daqui vai para o sistema ou para e-mail.
+ * A planilha antiga de inscrições fica como estava, só para consulta.
  *
- * Regras (Davi, 25/10/2026; planta 3.5): 14 a 18/12/2026, das 14h às 17h30, crianças de 3 a 12 anos,
- * 20 vagas por tarde. Semana R$ 625, tarde avulsa R$ 160. Contraturno 1 vez por semana: 3 tardes incluídas;
- * 2 vezes por semana: a semana inteira. Até 30/11, 14 vagas por tarde ficam para o Contraturno e 6 para a
- * comunidade; depois, as 20 valem para todos. A vaga fica garantida quando a Índigo confirma o Pix.
- *
- * Vaga presa (auditoria do sistema de 29/10/2026): a inscrição aguardando o Pix (ou "Contraturno: conferir") segura a
- * vaga por 48 horas, contadas pelo código da inscrição; depois, a vaga volta a ficar livre até a Índigo marcar
- * Confirmado. Confirmado conta sempre; Cancelado nunca. Linha escrita à mão, sem o código, só conta como Confirmado.
- * Cada WhatsApp segura no máximo 4 crianças aguardando, e o servidor aceita no máximo 30 inscrições por hora.
+ * Endereço antigo (cadastro.indigorei.com.br/clube): a página leva para o sistema; quem estiver com a página antiga
+ * aberta recebe o recado com o endereço novo.
  */
 
 const CLUBE = {
-  PLANILHA: 'Clube de Férias dezembro 2026 (inscrições)',
   PLANILHA_ALERGIAS: 'Clube de Férias dezembro 2026 (alergias)',
-  DIAS: ['2026-12-14', '2026-12-15', '2026-12-16', '2026-12-17', '2026-12-18'],
-  NOME_DIA: { '2026-12-14': 'Seg 14', '2026-12-15': 'Ter 15', '2026-12-16': 'Qua 16', '2026-12-17': 'Qui 17', '2026-12-18': 'Sex 18' },
-  VAGAS: 20,
-  VAGAS_CONTRATURNO: 14,
-  RESERVA_ATE: '2026-11-30',
-  SEMANA: 62500,
-  TARDE: 16000,
-  INCLUIDAS_1X: 3,
-  REFERENCIA_IDADE: '2026-12-14',
-  IDADE_MIN: 3,
-  IDADE_MAX: 12,
-  MAX_CRIANCAS: 4,
-  PRAZO_PIX_HORAS: 48,
-  INSCRICOES_POR_HORA: 30,
-  PIX_NOME: 'INSTITUTO INDIGO REI',
-  PIX_CIDADE: 'BRASILIA',
-  SITUACOES: ['Aguardando Pix', 'Confirmado', 'Cancelado', 'Contraturno: conferir']
+  ENDERECO: 'https://sistema.indigorei.com.br/clube',
+  ALERGIAS_POR_HORA: 60,
+  MAX_CRIANCAS: 8
 };
-
-const CONTRATURNO_CLUBE = { nao: 'Não', '1x': '1 vez por semana', '2x': '2 vezes por semana' };
-
-const COL_CLUBE = [
-  ['dataHora', 'Data e hora'],
-  ['envio', 'Código da inscrição'],
-  ['situacao', 'Situação'],
-  ['crianca', 'Criança: nome completo'],
-  ['nascimento', 'Nascimento'],
-  ['idade', 'Idade em 14/12'],
-  ['grupo', 'Grupo'],
-  ['escola', 'Escola'],
-  ['serie', 'Ano/série'],
-  ['contraturno', 'Contraturno na Índigo'],
-  ['dias', 'Tardes'],
-  ['valor', 'Valor da criança (R$)'],
-  ['total', 'Total da inscrição (R$)'],
-  ['respNome', 'Responsável'],
-  ['respTelefone', 'WhatsApp'],
-  ['respEmail', 'E-mail'],
-  ['emergNome', 'Emergência: nome'],
-  ['emergTelefone', 'Emergência: telefone'],
-  ['autorizaImagem', 'Uso de imagem'],
-  ['consentimento', 'Consentimento LGPD']
-];
 
 const COL_CLUBE_ALERGIAS = [
   ['dataHora', 'Data e hora'],
@@ -88,20 +37,8 @@ const COL_CLUBE_ALERGIAS = [
 
 function configurarClube() {
   const props = PropertiesService.getScriptProperties();
-  const pasta = pasta_(props.getProperty('PASTA_ID'));
   const restrita = pasta_(props.getProperty('PASTA_RESTRITA_ID'));
-  if (!pasta || !restrita) throw new Error('Rode configurar() do cadastro primeiro.');
-
-  let planilha = planilha_(props.getProperty('CLUBE_PLANILHA_ID'));
-  if (!planilha) {
-    planilha = SpreadsheetApp.create(CLUBE.PLANILHA);
-    DriveApp.getFileById(planilha.getId()).moveTo(pasta);
-    props.setProperty('CLUBE_PLANILHA_ID', planilha.getId());
-    prepararPlanilha_(planilha, [['Inscrições', COL_CLUBE]]);
-    const regra = SpreadsheetApp.newDataValidation().requireValueInList(CLUBE.SITUACOES, true).setAllowInvalid(false).build();
-    planilha.getSheetByName('Inscrições').getRange(2, 3, 999, 1).setDataValidation(regra);
-  }
-
+  if (!restrita) throw new Error('Rode configurar() do cadastro primeiro.');
   let alergias = planilha_(props.getProperty('CLUBE_ALERGIAS_ID'));
   if (!alergias) {
     alergias = SpreadsheetApp.create(CLUBE.PLANILHA_ALERGIAS);
@@ -109,13 +46,11 @@ function configurarClube() {
     props.setProperty('CLUBE_ALERGIAS_ID', alergias.getId());
     prepararPlanilha_(alergias, [['Alergias', COL_CLUBE_ALERGIAS]]);
   }
-
   const resumo = [
-    'Clube pronto.',
-    'Inscrições: ' + planilha.getUrl(),
+    'Clube pronto (só as alergias; a inscrição é no sistema).',
     'Alergias (restrita): ' + alergias.getUrl(),
-    props.getProperty('PIX_CHAVE') ? 'Chave Pix: ok.' : 'Falta criar a propriedade PIX_CHAVE com o CNPJ só com os números.',
-    'Depois: Implantar > Gerenciar implantações > editar > Nova versão.'
+    props.getProperty('SISTEMA_URL') && props.getProperty('SISTEMA_CHAVE_PUBLICA')
+      ? 'Ligação com o sistema: ok.' : 'Falta SISTEMA_URL ou SISTEMA_CHAVE_PUBLICA nas propriedades do script.'
   ].join('\n');
   Logger.log(resumo);
   return resumo;
@@ -123,238 +58,83 @@ function configurarClube() {
 
 
 /* ------------------------------------------------------------------ */
-/* Contas: preço e vagas (as mesmas da página, que só mostra)          */
+/* Endereço antigo                                                     */
 /* ------------------------------------------------------------------ */
 
-// Centavos de uma criança: quantas tardes e se faz Contraturno.
-function valorClube_(tardes, contraturno) {
-  if (contraturno === '2x') return 0;
-  const pagas = contraturno === '1x' ? Math.max(0, tardes - CLUBE.INCLUIDAS_1X) : tardes;
-  return Math.min(pagas * CLUBE.TARDE, CLUBE.SEMANA);
-}
-
-function hojeClube_() {
-  return Utilities.formatDate(new Date(), CONFIG.FUSO, 'yyyy-MM-dd');
-}
-
-// Inscrição que segura vaga: Confirmado sempre; aguardando (Pix ou conferência do Contraturno) por 48 horas; Cancelado nunca.
-function seguraVaga_(l, agora) {
-  if (l.situacao === 'Cancelado') return false;
-  if (l.situacao === 'Confirmado') return true;
-  return agora - l.em < CLUBE.PRAZO_PIX_HORAS * 3600000;
-}
-
-// Hora da inscrição pelo código (C + aammdd-hhmmss, hora de Brasília). Sem código: 0 (não segura vaga aguardando).
-function horaDaInscricao_(envio) {
-  const m = /^C(\d{2})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/.exec(String(envio || ''));
-  return m ? Date.parse('20' + m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + m[6] + '-03:00') : 0;
-}
-
-// Vagas livres por tarde, para a comunidade e para o Contraturno. Só conta inscrição que segura vaga.
-function vagasClube_(linhas, hoje, agora) {
-  const reserva = hoje <= CLUBE.RESERVA_ATE;
-  const momento = typeof agora === 'number' ? agora : Date.now();
-  return CLUBE.DIAS.map(function (dia) {
-    let comunidade = 0, contraturno = 0;
-    linhas.forEach(function (l) {
-      if (!seguraVaga_(l, momento) || l.dias.indexOf(dia) < 0) return;
-      if (l.contraturno === 'nao') comunidade++; else contraturno++;
-    });
-    if (!reserva) {
-      const livres = Math.max(0, CLUBE.VAGAS - comunidade - contraturno);
-      return { dia: dia, comunidade: livres, contraturno: livres };
-    }
-    return {
-      dia: dia,
-      comunidade: Math.max(0, CLUBE.VAGAS - CLUBE.VAGAS_CONTRATURNO - comunidade),
-      contraturno: Math.max(0, CLUBE.VAGAS_CONTRATURNO - contraturno)
-    };
-  });
-}
-
-function lerInscricoesClube_(planilha) {
-  const aba = planilha.getSheetByName('Inscrições');
-  if (!aba || aba.getLastRow() < 2) return [];
-  const iEnvio = 1, iSit = 2, iContra = 9, iDias = 10, iTelefone = 14;
-  return aba.getRange(2, 1, aba.getLastRow() - 1, COL_CLUBE.length).getDisplayValues().map(function (r) {
-    const contra = Object.keys(CONTRATURNO_CLUBE).filter(function (k) { return CONTRATURNO_CLUBE[k] === r[iContra]; })[0] || 'nao';
-    const dias = CLUBE.DIAS.filter(function (d) { return String(r[iDias]).indexOf(CLUBE.NOME_DIA[d]) >= 0; });
-    return { situacao: r[iSit], contraturno: contra, dias: dias, em: horaDaInscricao_(r[iEnvio]), telefone: soDigitos_(r[iTelefone]) };
-  });
-}
-
-// GET ?clube=vagas
+// GET ?clube=vagas da página antiga: as inscrições mudaram de endereço.
 function clubeVagas_() {
-  const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('CLUBE_PLANILHA_ID'));
-  if (!planilha) return { ok: false, erro: 'As inscrições ainda não abriram.' };
-  const hoje = hojeClube_();
-  return { ok: true, reservaAte: CLUBE.RESERVA_ATE, reserva: hoje <= CLUBE.RESERVA_ATE, prazoPixHoras: CLUBE.PRAZO_PIX_HORAS,
-    vagas: vagasClube_(lerInscricoesClube_(planilha), hoje, Date.now()) };
+  return { ok: false, mudou: true, endereco: CLUBE.ENDERECO, erro: 'As inscrições do Clube agora são em ' + CLUBE.ENDERECO };
+}
+
+// POST tipo clube da página antiga: o mesmo recado.
+function clubeInscrever_() {
+  throw new Error('As inscrições do Clube agora são em ' + CLUBE.ENDERECO + '. Abra o endereço e faça a inscrição por lá.');
 }
 
 
 /* ------------------------------------------------------------------ */
-/* Inscrição                                                           */
+/* Alergias                                                            */
 /* ------------------------------------------------------------------ */
 
-function idadeEm_(nascimento, referencia) {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(nascimento);
-  const r = referencia.split('-').map(Number);
-  let idade = r[0] - +m[3];
-  if (r[1] < +m[2] || (r[1] === +m[2] && r[2] < +m[1])) idade--;
-  return idade;
-}
-
-function validarClube_(d) {
-  if (!d || typeof d !== 'object') throw new Error('Inscrição inválida. Recarregue a página e tente de novo.');
+// POST { tipo: 'clube_alergias', referencia, criancas: [{ nome, nascimento, alergias }] }
+function clubeAlergias_(d) {
+  if (!dentroDoLimite_('clube-alergias', CLUBE.ALERGIAS_POR_HORA, 3600)) {
+    throw new Error('Recebemos muitos envios agora. Mande as alergias pelo WhatsApp da Índigo.');
+  }
+  const referencia = String((d && d.referencia) || '');
+  if (!/^C\d{6}-\d{4}-[A-Z0-9]{3}$/.test(referencia)) throw new Error('Referência da inscrição inválida.');
   const lista = Array.isArray(d.criancas) ? d.criancas : [];
-  if (!lista.length || lista.length > CLUBE.MAX_CRIANCAS) throw new Error('Inscreva de 1 a ' + CLUBE.MAX_CRIANCAS + ' crianças.');
-  const criancas = lista.map(function (x, i) {
-    const n = 'Criança ' + (i + 1) + ': ';
-    const c = {
-      nome: txt_(x.nome, 150),
-      nascimento: txt_(x.nascimento, 10),
-      escola: txt_(x.escola, 100),
-      serie: txt_(x.serie, 40),
-      contraturno: CONTRATURNO_CLUBE[x.contraturno] ? x.contraturno : '',
-      dias: (Array.isArray(x.dias) ? x.dias : []).filter(function (dia, k, todos) { return CLUBE.DIAS.indexOf(dia) >= 0 && todos.indexOf(dia) === k; }),
-      alergias: txt_(x.alergias, 500)
-    };
-    if (palavras_(c.nome) < 2) throw new Error(n + 'escreva o nome completo.');
-    if (!dataValida_(c.nascimento)) throw new Error(n + 'confira a data de nascimento (dd/mm/aaaa).');
-    c.idade = idadeEm_(c.nascimento, CLUBE.REFERENCIA_IDADE);
-    if (c.idade < CLUBE.IDADE_MIN || c.idade > CLUBE.IDADE_MAX) throw new Error(n + 'o Clube é para crianças de 3 a 12 anos.');
-    c.grupo = c.idade <= 7 ? '3 a 7 anos' : '8 a 12 anos';
-    if (!c.contraturno) throw new Error(n + 'diga se faz Contraturno na Índigo.');
-    if (!c.dias.length) throw new Error(n + 'escolha pelo menos uma tarde.');
-    c.dias.sort();
-    c.valor = valorClube_(c.dias.length, c.contraturno);
-    return c;
-  });
-  const f = {
-    respNome: txt_(d.respNome, 150),
-    respTelefone: txt_(d.respTelefone, 30),
-    respEmail: txt_(d.respEmail, 120),
-    emergNome: txt_(d.emergNome, 150),
-    emergTelefone: txt_(d.emergTelefone, 30),
-    autorizaImagem: ['Sim, autorizo', 'Não autorizo'].indexOf(d.autorizaImagem) >= 0 ? d.autorizaImagem : '',
-    consentimento: d.consentimento === true ? 'Sim' : ''
-  };
-  if (palavras_(f.respNome) < 2) throw new Error('Escreva o nome completo do responsável.');
-  if (soDigitos_(f.respTelefone).length < 10) throw new Error('Confira o WhatsApp do responsável, com DDD.');
-  if (f.respEmail && !emailValido_(f.respEmail)) throw new Error('Confira o e-mail do responsável.');
-  if (palavras_(f.emergNome) < 1 || soDigitos_(f.emergTelefone).length < 10) throw new Error('Preencha o contato de emergência, com DDD.');
-  if (!f.autorizaImagem) throw new Error('Responda sobre o uso de imagem.');
-  if (!f.consentimento) throw new Error('Marque a autorização para usar os dados da inscrição.');
-  return { f: f, criancas: criancas };
-}
+  if (!lista.length || lista.length > CLUBE.MAX_CRIANCAS) throw new Error('Envio inválido.');
+  const criancas = lista.map(function (c) {
+    return { nome: txt_(c && c.nome, 150), nascimento: txt_(c && c.nascimento, 10), alergias: txt_(c && c.alergias, 500) };
+  }).filter(function (c) { return c.nome && c.alergias; });
+  if (!criancas.length) return { ok: true };
+  if (!inscricaoNoSistema_(referencia, criancas.map(function (c) { return c.nome; }))) {
+    throw new Error('Não encontramos a inscrição. Mande as alergias pelo WhatsApp da Índigo.');
+  }
 
-// Pix copia e cola (BR Code estático do Banco Central), como src/dominio/pix.ts do sistema.
-function pixClube_(chave, centavos, txid) {
-  const campo = function (id, v) { return id + ('0' + v.length).slice(-2) + v; };
-  const valor = Math.floor(centavos / 100) + '.' + ('0' + (centavos % 100)).slice(-2);
-  const semCrc = campo('00', '01') + campo('26', campo('00', 'br.gov.bcb.pix') + campo('01', chave)) + campo('52', '0000') +
-    campo('53', '986') + campo('54', valor) + campo('58', 'BR') + campo('59', CLUBE.PIX_NOME) + campo('60', CLUBE.PIX_CIDADE) +
-    campo('62', campo('05', txid)) + '6304';
-  let crc = 0xffff;
-  Utilities.newBlob(semCrc).getBytes().forEach(function (b) {
-    crc ^= (b & 0xff) << 8;
-    for (let i = 0; i < 8; i++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
-  });
-  return semCrc + ('000' + crc.toString(16).toUpperCase()).slice(-4);
-}
-
-const reaisClube_ = function (c) { return (c / 100).toFixed(2).replace('.', ','); };
-
-function clubeInscrever_(d) {
-  if (typeof d.tempo !== 'number' || d.tempo < 5000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
-  if (d.site) registrarDiagnostico_({ evento: 'campo escondido preenchido (Clube)', tipo: 'aviso', detalhe: 'A inscrição foi gravada normalmente. Confira se é real.' });
-
-  const props = PropertiesService.getScriptProperties();
-  const planilha = planilha_(props.getProperty('CLUBE_PLANILHA_ID'));
-  const alergias = planilha_(props.getProperty('CLUBE_ALERGIAS_ID'));
-  if (!planilha || !alergias) throw new Error('As inscrições ainda não abriram. Fale com a Índigo pelo WhatsApp.');
-
-  const v = validarClube_(d);
-  const agora = new Date();
-  const carimbo = Utilities.formatDate(agora, CONFIG.FUSO, 'yyMMddHHmmss');
-  const sufixo = Math.random().toString(36).slice(2, 5).toUpperCase();
-  const envio = 'C' + carimbo.slice(0, 6) + '-' + carimbo.slice(6) + '-' + sufixo;
-  const total = v.criancas.reduce(function (s, c) { return s + c.valor; }, 0);
-
+  const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('CLUBE_ALERGIAS_ID'));
+  if (!planilha) throw new Error('A planilha das alergias não está pronta. Mande pelo WhatsApp da Índigo.');
+  const aba = planilha.getSheetByName('Alergias');
   const trava = LockService.getScriptLock();
   trava.waitLock(30000);
   try {
-    if (!dentroDoLimite_('clube-hora', CLUBE.INSCRICOES_POR_HORA, 3600)) {
-      throw new Error('Recebemos muitas inscrições agora. Tente de novo daqui a pouco ou fale com a Índigo pelo WhatsApp.');
+    // Reenvio da mesma inscrição (a página tenta duas vezes): a mesma criança não entra em dobro.
+    const ja = aba.getLastRow() >= 2
+      ? aba.getRange(2, 1, aba.getLastRow() - 1, COL_CLUBE_ALERGIAS.length).getDisplayValues()
+          .map(function (r) { return r[1] + '|' + r[2]; })
+      : [];
+    const agora = new Date();
+    const novas = criancas.filter(function (c) { return ja.indexOf(referencia + '|' + c.nome) < 0; });
+    if (novas.length) {
+      gravar_(aba, COL_CLUBE_ALERGIAS, novas.map(function (c) {
+        return { dataHora: agora, envio: referencia, crianca: c.nome, nascimento: c.nascimento, alergias: c.alergias };
+      }));
     }
-    // Confere as vagas de novo, com as inscrições de agora, antes de gravar.
-    const linhas = lerInscricoesClube_(planilha);
-    const momento = agora.getTime();
-    // Um WhatsApp segura no máximo 4 crianças aguardando o Pix ou a conferência.
-    const telefone = soDigitos_(v.f.respTelefone);
-    const aguardando = linhas.filter(function (l) {
-      return l.telefone === telefone && l.situacao !== 'Confirmado' && seguraVaga_(l, momento);
-    }).length;
-    if (aguardando + v.criancas.length > CLUBE.MAX_CRIANCAS) {
-      throw new Error('Este WhatsApp já tem inscrição aguardando o Pix. Pague a inscrição aberta ou fale com a Índigo pelo WhatsApp para mudar.');
-    }
-    const vagas = vagasClube_(linhas, hojeClube_(), momento);
-    const pedidos = {};
-    v.criancas.forEach(function (c) {
-      const tipo = c.contraturno === 'nao' ? 'comunidade' : 'contraturno';
-      c.dias.forEach(function (dia) { pedidos[dia + '|' + tipo] = (pedidos[dia + '|' + tipo] || 0) + 1; });
-    });
-    vagas.forEach(function (x) {
-      ['comunidade', 'contraturno'].forEach(function (tipo) {
-        if ((pedidos[x.dia + '|' + tipo] || 0) > x[tipo]) {
-          throw new Error('A tarde de ' + CLUBE.NOME_DIA[x.dia].replace(/^\S+ /, '') + '/12 não tem mais vaga' +
-            (x[tipo] ? ' para todas as crianças (sobram ' + x[tipo] + ')' : '') + '. Escolha outra tarde.');
-        }
-      });
-    });
-    const situacao = total > 0 ? 'Aguardando Pix' : 'Contraturno: conferir';
-    gravar_(planilha.getSheetByName('Inscrições'), COL_CLUBE, v.criancas.map(function (c) {
-      return {
-        dataHora: agora, envio: envio, situacao: situacao, crianca: c.nome, nascimento: c.nascimento, idade: String(c.idade),
-        grupo: c.grupo, escola: c.escola, serie: c.serie, contraturno: CONTRATURNO_CLUBE[c.contraturno],
-        dias: c.dias.map(function (dia) { return CLUBE.NOME_DIA[dia]; }).join(', '), valor: reaisClube_(c.valor),
-        total: reaisClube_(total), respNome: v.f.respNome, respTelefone: v.f.respTelefone, respEmail: v.f.respEmail,
-        emergNome: v.f.emergNome, emergTelefone: v.f.emergTelefone, autorizaImagem: v.f.autorizaImagem, consentimento: v.f.consentimento
-      };
-    }));
-    gravar_(alergias.getSheetByName('Alergias'), COL_CLUBE_ALERGIAS, v.criancas.filter(function (c) { return c.alergias; }).map(function (c) {
-      return { dataHora: agora, envio: envio, crianca: c.nome, nascimento: c.nascimento, alergias: c.alergias };
-    }));
   } finally {
     trava.releaseLock();
   }
+  return { ok: true };
+}
 
-  const chave = soDigitos_(props.getProperty('PIX_CHAVE'));
-  const pix = total > 0 && chave.length === 14 ? pixClube_(chave, total, 'CLUBE' + carimbo + sufixo) : null;
+// A inscrição existe no sistema, é recente e tem estas crianças (clube_referencia_recente). Sem a ligação configurada
+// ou com o sistema fora do ar: falso, e a página pede para mandar pelo WhatsApp.
+function inscricaoNoSistema_(referencia, nomes) {
+  const props = PropertiesService.getScriptProperties();
+  const url = props.getProperty('SISTEMA_URL');
+  const publica = props.getProperty('SISTEMA_CHAVE_PUBLICA');
+  if (!url || !publica) return false;
   try {
-    MailApp.sendEmail({
-      to: CONFIG.AVISO_EMAIL,
-      subject: ('Clube de Férias: inscrição de ' + v.criancas.map(function (c) { return c.nome.split(/\s+/)[0]; }).join(', ')).replace(/[\r\n]+/g, ' '),
-      body: [
-        'Chegou uma inscrição no Clube de Férias de dezembro.',
-        '',
-        v.criancas.map(function (c) {
-          return c.nome + ' (' + c.grupo + '), Contraturno: ' + CONTRATURNO_CLUBE[c.contraturno] + ', tardes: ' +
-            c.dias.map(function (dia) { return CLUBE.NOME_DIA[dia]; }).join(', ') + ', R$ ' + reaisClube_(c.valor);
-        }).join('\n'),
-        '',
-        'Total: R$ ' + reaisClube_(total) + (total > 0 ? ' (aguardando o Pix)' : ' (só Contraturno: conferir)'),
-        'A vaga fica presa por ' + CLUBE.PRAZO_PIX_HORAS + ' horas. Marque Confirmado na planilha quando o Pix chegar (ou o Contraturno for conferido).',
-        'Responsável: ' + v.f.respNome + ' (' + v.f.respTelefone + ')',
-        v.criancas.some(function (c) { return c.alergias; }) ? 'Alergias informadas: sim, na planilha restrita.' : 'Sem alergias informadas.',
-        'Código: ' + envio,
-        '',
-        'Planilha: ' + planilha.getUrl()
-      ].join('\n')
+    const resposta = UrlFetchApp.fetch(url.replace(/\/+$/, '') + '/rest/v1/rpc/clube_referencia_recente', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { apikey: publica },
+      payload: JSON.stringify({ p_referencia: referencia, p_nomes: nomes }),
+      muteHttpExceptions: true
     });
-  } catch (e) {
-    // O aviso é cortesia: a inscrição já foi gravada.
+    return resposta.getResponseCode() < 300 && String(resposta.getContentText()).trim() === 'true';
+  } catch (err) {
+    registrarDiagnostico_({ evento: 'falha ao conferir inscrição do Clube', tipo: 'sistema', detalhe: String(err && err.message || err) });
+    return false;
   }
-  return { ok: true, envio: envio, total: total, pix: pix, primeiroNome: v.f.respNome.split(/\s+/)[0] };
 }

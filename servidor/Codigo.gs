@@ -139,7 +139,8 @@ function doGet(e) {
 function doPost(e) {
   try {
     const dados = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (dados.tipo === 'clube') return json_(clubeInscrever_(dados)); // Clube de Férias (Clube.gs)
+    if (dados.tipo === 'clube') return json_(clubeInscrever_(dados)); // Clube de Férias: página antiga (Clube.gs)
+    if (dados.tipo === 'clube_alergias') return json_(clubeAlergias_(dados)); // alergias do Clube, só na planilha restrita
     return json_(registrar_(dados));
   } catch (err) {
     const msg = String(err && err.message ? err.message : err);
