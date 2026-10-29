@@ -40,7 +40,12 @@ const CONFIG = {
   MAX_ARQUIVOS_POR_APRENDIZ: 5,
   MAX_MB_POR_ARQUIVO: 10,
   MAX_MB_TOTAL: 25,
-  TIPOS_ARQUIVO: ['application/pdf', 'image/jpeg', 'image/png']
+  TIPOS_ARQUIVO: ['application/pdf', 'image/jpeg', 'image/png'],
+  // Limites de envio (auditoria do sistema de 29/10/2026): o endereço do servidor está na página pública, e sem limite um
+  // robô enchia o Drive com anexos, a cota de e-mails e a caixa de cadastros. Com folga para a renovação de dezembro.
+  CADASTROS_POR_HORA: 30,
+  CADASTROS_POR_DIA: 80,
+  DIAGNOSTICOS_POR_HORA: 60
 };
 
 const COL_FAMILIAS = [
@@ -212,10 +217,13 @@ function prepararPlanilha_(planilha, abas) {
 
 function registrar_(d) {
   if (!d || typeof d !== 'object') throw new Error('Envio inválido. Recarregue a página e tente de novo.');
-  // Proteção simples contra robôs: envio rápido demais é recusado com mensagem.
-  // O campo escondido preenchido só gera um aviso: o preenchimento automático do
-  // navegador pode completá-lo sem a família saber, e um cadastro real não pode sumir.
-  if (typeof d.tempo === 'number' && d.tempo < 8000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
+  // Proteção simples contra robôs: envio rápido demais (ou sem o tempo, que a página sempre manda) é recusado com
+  // mensagem. O campo escondido preenchido só gera um aviso: o preenchimento automático do navegador pode completá-lo
+  // sem a família saber, e um cadastro real não pode sumir.
+  if (typeof d.tempo !== 'number' || d.tempo < 8000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
+  if (!dentroDoLimite_('cadastro-hora', CONFIG.CADASTROS_POR_HORA, 3600) || !dentroDoLimite_('cadastro-dia', CONFIG.CADASTROS_POR_DIA, 86400)) {
+    throw new Error('Recebemos muitos cadastros agora. Tente de novo daqui a pouco ou fale com a Índigo pelo WhatsApp.');
+  }
   if (d.site) registrarDiagnostico_({ evento: 'campo escondido preenchido', tipo: 'aviso', detalhe: 'O cadastro foi gravado normalmente. Confira se é de uma família real.' });
 
   const props = PropertiesService.getScriptProperties();
@@ -441,6 +449,7 @@ const COL_DIAGNOSTICO = ['Data e hora', 'Evento', 'Tipo', 'Detalhe', 'Tamanho (M
 
 function registrarDiagnostico_(p) {
   try {
+    if (!dentroDoLimite_('diagnostico-hora', CONFIG.DIAGNOSTICOS_POR_HORA, 3600)) return;
     const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('PLANILHA_ID'));
     if (!planilha) return;
     const trava = LockService.getScriptLock();
@@ -592,6 +601,27 @@ function txt_(v, max) {
 }
 
 function soDigitos_(v) { return String(v || '').replace(/\D/g, ''); }
+
+// Conta envios por janela de tempo; passou do máximo, devolve false. Janela de até 6 horas fica no cache do script (que
+// pode esquecer antes da hora: é um freio para robô, não uma conta exata); a de um dia fica nas propriedades do script,
+// e a contagem do dia anterior sai.
+function dentroDoLimite_(nome, maximo, segundos) {
+  const janela = Math.floor(Date.now() / (segundos * 1000));
+  const chave = 'limite:' + nome + ':' + janela;
+  if (segundos <= 21000) {
+    const cache = CacheService.getScriptCache();
+    const n = Number(cache.get(chave) || 0);
+    if (n >= maximo) return false;
+    cache.put(chave, String(n + 1), segundos + 60);
+    return true;
+  }
+  const props = PropertiesService.getScriptProperties();
+  const n = Number(props.getProperty(chave) || 0);
+  if (n >= maximo) return false;
+  props.setProperty(chave, String(n + 1));
+  if (n === 0) props.deleteProperty('limite:' + nome + ':' + (janela - 1));
+  return true;
+}
 
 function palavras_(s) { return String(s || '').split(/\s+/).filter(Boolean).length; }
 

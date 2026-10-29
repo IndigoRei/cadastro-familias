@@ -37,6 +37,7 @@ function planilhaFalsa() {
 const props = { PASTA_ID: 'p', PASTA_RESTRITA_ID: 'r', PIX_CHAVE: '00.000.000/0001-91' };
 const planilhas = {};
 let emails = 0;
+const cache = {};
 const contexto = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
   DriveApp: {
@@ -59,6 +60,7 @@ const contexto = {
     newBlob: (s) => ({ getBytes: () => [...Buffer.from(s, 'utf8')].map((b) => (b > 127 ? b - 256 : b)) }),
   },
   MailApp: { sendEmail: () => { emails++; } },
+  CacheService: { getScriptCache: () => ({ get: (k) => cache[k] || null, put: (k, v) => { cache[k] = v; } }) },
   Logger: { log: () => {} },
   ContentService: {},
   console,
@@ -100,17 +102,32 @@ assert.strictEqual(planilhas['Clube de Férias dezembro 2026 (alergias)'].getShe
 assert.strictEqual(emails, 1);
 
 // Vagas: até 30/11, 6 da comunidade por tarde.
-const vagas = (hoje) => JSON.parse(JSON.stringify(run(`vagasClube_(lerInscricoesClube_(planilha_('Clube de Férias dezembro 2026 (inscrições)')), '${hoje}')`)));
+const vagas = (hoje, agora) => JSON.parse(JSON.stringify(run(`vagasClube_(lerInscricoesClube_(planilha_('Clube de Férias dezembro 2026 (inscrições)')), '${hoje}'${agora ? `, ${agora}` : ''})`)));
 assert.deepStrictEqual(vagas('2026-11-01')[0], { dia: '2026-12-14', comunidade: 5, contraturno: 13 });
 assert.deepStrictEqual(vagas('2026-12-01')[0], { dia: '2026-12-14', comunidade: 18, contraturno: 18 });
 
 // Comunidade lotada numa tarde: a inscrição é recusada com a tarde.
 let erroLotado = '';
 for (let i = 0; i < 6; i++) {
-  contexto.dados = Object.assign({}, base, { criancas: [crianca({ nome: 'Outra Criança ' + i, dias: ['2026-12-15'] })] });
+  contexto.dados = Object.assign({}, base, { respTelefone: '(61) 98000-000' + i, criancas: [crianca({ nome: 'Outra Criança ' + i, dias: ['2026-12-15'] })] });
   try { run('clubeInscrever_(dados)'); } catch (e) { erroLotado = e.message; }
 }
 if (run("hojeClube_()") <= '2026-11-30') assert.match(erroLotado, /15\/12 não tem mais vaga/);
+
+// Vaga presa (auditoria de 29/10/2026): aguardando segura a vaga por 48 horas; Confirmado segura sempre.
+const depois = Date.now() + 49 * 3600000;
+assert.deepStrictEqual(vagas('2026-12-01', depois)[0], { dia: '2026-12-14', comunidade: 20, contraturno: 20 });
+insc[1][2] = 'Confirmado'; // a primeira criança pagou
+assert.deepStrictEqual(vagas('2026-12-01', depois)[0], { dia: '2026-12-14', comunidade: 19, contraturno: 19 });
+insc[1][2] = 'Aguardando Pix';
+
+// Um WhatsApp segura no máximo 4 crianças aguardando: já há 2 deste; mais 3 passam do limite.
+contexto.dados = Object.assign({}, base, { criancas: [1, 2, 3].map((n) => crianca({ nome: 'Mais Criança ' + n, dias: ['2026-12-18'] })) });
+assert.throws(() => run('clubeInscrever_(dados)'), /já tem inscrição aguardando/);
+
+// Sem o tempo da página, o envio é recusado.
+contexto.dados = Object.assign({}, base, { tempo: undefined, respTelefone: '(61) 97777-0000', criancas: [crianca({})] });
+assert.throws(() => run('clubeInscrever_(dados)'), /muito rápido/);
 
 // Validação
 contexto.dados = Object.assign({}, base, { criancas: [crianca({ nascimento: '01/01/2010' })] });

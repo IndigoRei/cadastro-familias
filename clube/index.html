@@ -401,7 +401,7 @@
     el('pronto').hidden = false;
     el('prontoTitulo').textContent = 'Inscrição feita' + (res.primeiroNome ? ', ' + res.primeiroNome : '') + '!';
     if (res.total > 0 && res.pix) {
-      el('prontoTexto').textContent = 'Para garantir a vaga, pague o Pix abaixo. A vaga fica garantida quando a Índigo confirmar o pagamento, e avisamos pelo WhatsApp.';
+      el('prontoTexto').textContent = 'Para garantir a vaga, pague o Pix abaixo em até 48 horas: nesse prazo a vaga fica reservada para você, e ela fica garantida quando a Índigo confirmar o pagamento. Avisamos pelo WhatsApp.';
       el('pagar').hidden = false;
       el('prontoTotal').textContent = reais(res.total);
       el('codigoPix').value = res.pix;
@@ -420,7 +420,7 @@
         });
       });
     } else if (res.total > 0) {
-      el('prontoTexto').textContent = 'O valor é de ' + reais(res.total) + '. A Índigo manda o Pix pelo WhatsApp, e a vaga fica garantida com o pagamento.';
+      el('prontoTexto').textContent = 'O valor é de ' + reais(res.total) + '. A Índigo manda o Pix pelo WhatsApp; a vaga fica reservada por 48 horas e garantida com o pagamento.';
     } else {
       el('prontoTexto').textContent = 'As tardes escolhidas estão incluídas no Contraturno, então não há nada a pagar. A Índigo confirma pelo WhatsApp.';
     }

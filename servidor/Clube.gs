@@ -19,6 +19,11 @@
  * 20 vagas por tarde. Semana R$ 625, tarde avulsa R$ 160. Contraturno 1 vez por semana: 3 tardes incluídas;
  * 2 vezes por semana: a semana inteira. Até 30/11, 14 vagas por tarde ficam para o Contraturno e 6 para a
  * comunidade; depois, as 20 valem para todos. A vaga fica garantida quando a Índigo confirma o Pix.
+ *
+ * Vaga presa (auditoria do sistema de 29/10/2026): a inscrição aguardando o Pix (ou "Contraturno: conferir") segura a
+ * vaga por 48 horas, contadas pelo código da inscrição; depois, a vaga volta a ficar livre até a Índigo marcar
+ * Confirmado. Confirmado conta sempre; Cancelado nunca. Linha escrita à mão, sem o código, só conta como Confirmado.
+ * Cada WhatsApp segura no máximo 4 crianças aguardando, e o servidor aceita no máximo 30 inscrições por hora.
  */
 
 const CLUBE = {
@@ -36,6 +41,8 @@ const CLUBE = {
   IDADE_MIN: 3,
   IDADE_MAX: 12,
   MAX_CRIANCAS: 4,
+  PRAZO_PIX_HORAS: 48,
+  INSCRICOES_POR_HORA: 30,
   PIX_NOME: 'INSTITUTO INDIGO REI',
   PIX_CIDADE: 'BRASILIA',
   SITUACOES: ['Aguardando Pix', 'Confirmado', 'Cancelado', 'Contraturno: conferir']
@@ -130,13 +137,27 @@ function hojeClube_() {
   return Utilities.formatDate(new Date(), CONFIG.FUSO, 'yyyy-MM-dd');
 }
 
-// Vagas livres por tarde, para a comunidade e para o Contraturno. Cancelado não conta.
-function vagasClube_(linhas, hoje) {
+// Inscrição que segura vaga: Confirmado sempre; aguardando (Pix ou conferência do Contraturno) por 48 horas; Cancelado nunca.
+function seguraVaga_(l, agora) {
+  if (l.situacao === 'Cancelado') return false;
+  if (l.situacao === 'Confirmado') return true;
+  return agora - l.em < CLUBE.PRAZO_PIX_HORAS * 3600000;
+}
+
+// Hora da inscrição pelo código (C + aammdd-hhmmss, hora de Brasília). Sem código: 0 (não segura vaga aguardando).
+function horaDaInscricao_(envio) {
+  const m = /^C(\d{2})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/.exec(String(envio || ''));
+  return m ? Date.parse('20' + m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + m[6] + '-03:00') : 0;
+}
+
+// Vagas livres por tarde, para a comunidade e para o Contraturno. Só conta inscrição que segura vaga.
+function vagasClube_(linhas, hoje, agora) {
   const reserva = hoje <= CLUBE.RESERVA_ATE;
+  const momento = typeof agora === 'number' ? agora : Date.now();
   return CLUBE.DIAS.map(function (dia) {
     let comunidade = 0, contraturno = 0;
     linhas.forEach(function (l) {
-      if (l.situacao === 'Cancelado' || l.dias.indexOf(dia) < 0) return;
+      if (!seguraVaga_(l, momento) || l.dias.indexOf(dia) < 0) return;
       if (l.contraturno === 'nao') comunidade++; else contraturno++;
     });
     if (!reserva) {
@@ -154,11 +175,11 @@ function vagasClube_(linhas, hoje) {
 function lerInscricoesClube_(planilha) {
   const aba = planilha.getSheetByName('Inscrições');
   if (!aba || aba.getLastRow() < 2) return [];
-  const iSit = 2, iContra = 9, iDias = 10;
+  const iEnvio = 1, iSit = 2, iContra = 9, iDias = 10, iTelefone = 14;
   return aba.getRange(2, 1, aba.getLastRow() - 1, COL_CLUBE.length).getDisplayValues().map(function (r) {
     const contra = Object.keys(CONTRATURNO_CLUBE).filter(function (k) { return CONTRATURNO_CLUBE[k] === r[iContra]; })[0] || 'nao';
     const dias = CLUBE.DIAS.filter(function (d) { return String(r[iDias]).indexOf(CLUBE.NOME_DIA[d]) >= 0; });
-    return { situacao: r[iSit], contraturno: contra, dias: dias };
+    return { situacao: r[iSit], contraturno: contra, dias: dias, em: horaDaInscricao_(r[iEnvio]), telefone: soDigitos_(r[iTelefone]) };
   });
 }
 
@@ -167,7 +188,8 @@ function clubeVagas_() {
   const planilha = planilha_(PropertiesService.getScriptProperties().getProperty('CLUBE_PLANILHA_ID'));
   if (!planilha) return { ok: false, erro: 'As inscrições ainda não abriram.' };
   const hoje = hojeClube_();
-  return { ok: true, reservaAte: CLUBE.RESERVA_ATE, reserva: hoje <= CLUBE.RESERVA_ATE, vagas: vagasClube_(lerInscricoesClube_(planilha), hoje) };
+  return { ok: true, reservaAte: CLUBE.RESERVA_ATE, reserva: hoje <= CLUBE.RESERVA_ATE, prazoPixHoras: CLUBE.PRAZO_PIX_HORAS,
+    vagas: vagasClube_(lerInscricoesClube_(planilha), hoje, Date.now()) };
 }
 
 
@@ -245,7 +267,7 @@ function pixClube_(chave, centavos, txid) {
 const reaisClube_ = function (c) { return (c / 100).toFixed(2).replace('.', ','); };
 
 function clubeInscrever_(d) {
-  if (typeof d.tempo === 'number' && d.tempo < 5000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
+  if (typeof d.tempo !== 'number' || d.tempo < 5000) throw new Error('Envio muito rápido. Confira os dados e envie de novo.');
   if (d.site) registrarDiagnostico_({ evento: 'campo escondido preenchido (Clube)', tipo: 'aviso', detalhe: 'A inscrição foi gravada normalmente. Confira se é real.' });
 
   const props = PropertiesService.getScriptProperties();
@@ -263,8 +285,21 @@ function clubeInscrever_(d) {
   const trava = LockService.getScriptLock();
   trava.waitLock(30000);
   try {
+    if (!dentroDoLimite_('clube-hora', CLUBE.INSCRICOES_POR_HORA, 3600)) {
+      throw new Error('Recebemos muitas inscrições agora. Tente de novo daqui a pouco ou fale com a Índigo pelo WhatsApp.');
+    }
     // Confere as vagas de novo, com as inscrições de agora, antes de gravar.
-    const vagas = vagasClube_(lerInscricoesClube_(planilha), hojeClube_());
+    const linhas = lerInscricoesClube_(planilha);
+    const momento = agora.getTime();
+    // Um WhatsApp segura no máximo 4 crianças aguardando o Pix ou a conferência.
+    const telefone = soDigitos_(v.f.respTelefone);
+    const aguardando = linhas.filter(function (l) {
+      return l.telefone === telefone && l.situacao !== 'Confirmado' && seguraVaga_(l, momento);
+    }).length;
+    if (aguardando + v.criancas.length > CLUBE.MAX_CRIANCAS) {
+      throw new Error('Este WhatsApp já tem inscrição aguardando o Pix. Pague a inscrição aberta ou fale com a Índigo pelo WhatsApp para mudar.');
+    }
+    const vagas = vagasClube_(linhas, hojeClube_(), momento);
     const pedidos = {};
     v.criancas.forEach(function (c) {
       const tipo = c.contraturno === 'nao' ? 'comunidade' : 'contraturno';
@@ -310,6 +345,7 @@ function clubeInscrever_(d) {
         }).join('\n'),
         '',
         'Total: R$ ' + reaisClube_(total) + (total > 0 ? ' (aguardando o Pix)' : ' (só Contraturno: conferir)'),
+        'A vaga fica presa por ' + CLUBE.PRAZO_PIX_HORAS + ' horas. Marque Confirmado na planilha quando o Pix chegar (ou o Contraturno for conferido).',
         'Responsável: ' + v.f.respNome + ' (' + v.f.respTelefone + ')',
         v.criancas.some(function (c) { return c.alergias; }) ? 'Alergias informadas: sim, na planilha restrita.' : 'Sem alergias informadas.',
         'Código: ' + envio,
