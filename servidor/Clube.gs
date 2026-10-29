@@ -78,9 +78,6 @@ function clubeInscrever_() {
 
 // POST { tipo: 'clube_alergias', referencia, criancas: [{ nome, nascimento, alergias }] }
 function clubeAlergias_(d) {
-  if (!dentroDoLimite_('clube-alergias', CLUBE.ALERGIAS_POR_HORA, 3600)) {
-    throw new Error('Recebemos muitos envios agora. Mande as alergias pelo WhatsApp da Índigo.');
-  }
   const referencia = String((d && d.referencia) || '');
   if (!/^C\d{6}-\d{4}-[A-Z0-9]{3}$/.test(referencia)) throw new Error('Referência da inscrição inválida.');
   const lista = Array.isArray(d.criancas) ? d.criancas : [];
@@ -89,6 +86,11 @@ function clubeAlergias_(d) {
     return { nome: txt_(c && c.nome, 150), nascimento: txt_(c && c.nascimento, 10), alergias: txt_(c && c.alergias, 500) };
   }).filter(function (c) { return c.nome && c.alergias; });
   if (!criancas.length) return { ok: true };
+  // O limite conta depois de conferir o formato (envio malformado não gasta a cota das famílias) e antes de perguntar
+  // ao sistema (revisão de 29/10/2026).
+  if (!dentroDoLimite_('clube-alergias', CLUBE.ALERGIAS_POR_HORA, 3600)) {
+    throw new Error('Recebemos muitos envios agora. Mande as alergias pelo WhatsApp da Índigo.');
+  }
   if (!inscricaoNoSistema_(referencia, criancas.map(function (c) { return c.nome; }))) {
     throw new Error('Não encontramos a inscrição. Mande as alergias pelo WhatsApp da Índigo.');
   }
