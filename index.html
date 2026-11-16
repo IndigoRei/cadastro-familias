@@ -693,7 +693,7 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
   var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
   var ICONE_ERRO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>';
   var inicio = Date.now();
-  var VERSAO_PAGINA = '3';
+  var VERSAO_PAGINA = '4';
   var emEnvio = false;
   var preparando = 0; // anexos ainda sendo preparados
   var emailsMostrados = {}, emailsAvisados = {}; // e-mails com possível erro de digitação: aviso já mostrado / mantido pela família
@@ -854,7 +854,9 @@ var URL_SERVIDOR = 'https://script.google.com/macros/s/AKfycbxsQoJBGB8BY6us5MG-p
     qa(raiz, '[data-revela]').forEach(function (bloco) {
       var partes = bloco.getAttribute('data-revela').split('=');
       var nome = partes[0], valores = partes[1].split('|');
-      var r = raiz.querySelector('input[name="' + nome + '"]:checked, input[data-k="' + nome + '"]:checked');
+      // Dentro de um aprendiz, só as respostas dele: com o formulário inteiro, o segundo seguia o primeiro (16/11/2026).
+      var escopo = bloco.closest('.aprendiz') || raiz;
+      var r = escopo.querySelector('input[name="' + nome + '"]:checked, input[data-k="' + nome + '"]:checked');
       bloco.hidden = !(r && valores.indexOf(r.value) >= 0);
     });
   }
